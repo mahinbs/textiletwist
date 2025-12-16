@@ -27,21 +27,23 @@ const HeroParallax = () => {
             </motion.div>
 
             <motion.div
-                className="relative z-20 text-center text-white px-6 w-full max-w-5xl pt-6"
+                className="relative z-20 text-center text-white px-6 w-full max-w-5xl pt-10"
                 style={{ y: textY }}
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, ease: "easeOut" }}
             >
-                <motion.p
-                    className="text-secondary tracking-[0.3em] font-medium mb-4 uppercase text-sm md:text-base"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5, duration: 1 }}
+                <motion.div
+                    className="inline-block mb-4 px-6 py-2 rounded-full border border-secondary/30 bg-secondary/10 backdrop-blur-md"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5, duration: 0.8 }}
                 >
-                    Textile Twist John's
-                </motion.p>
-                <h1 className="text-6xl md:text-8xl lg:text-9xl font-serif font-bold mb-8 leading-tight">
+                    <span className="text-secondary tracking-[0.2em] font-semibold uppercase text-sm md:text-base">
+                        Textile Twist John's
+                    </span>
+                </motion.div>
+                <h1 className="text-6xl md:text-8xl lg:text-9xl font-serif  mb-5 leading-tight! italic font-light">
                     One Thread <br />
                     <span className="italic font-light text-secondary">Infinite Luxury</span>
                 </h1>

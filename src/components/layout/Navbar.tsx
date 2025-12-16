@@ -36,7 +36,7 @@ const Navbar = () => {
             >
                 {/* Logo */}
                 <Link to="/" className="flex items-center gap-2 group">
-                    <img src="/logo.png" alt="Textile Twist" className="w-12 h-auto" />
+                    <img src="/logo.png" alt="Textile Twist" className="w-14 h-auto" />
                     {/* <span className={cn("text-2xl font-serif font-bold text-white group-hover:text-secondary transition-colors")}>
                         Textile Twist
                     </span> */}

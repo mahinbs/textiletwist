@@ -6,7 +6,7 @@ const FabricShowcase = () => {
         <section className="py-32 bg-background relative overflow-hidden">
             <div className="container mx-auto px-6">
                 <div className="flex flex-col md:flex-row items-center gap-20">
-                    <div className="md:w-1/2">
+                    {/* <div className="md:w-1/2">
                         <motion.div
                             initial={{ opacity: 0, x: -50 }}
                             whileInView={{ opacity: 1, x: 0 }}
@@ -22,9 +22,9 @@ const FabricShowcase = () => {
                                 className="w-full h-[600px] object-cover grayscale hover:grayscale-0 transition-all duration-700 ease-in-out shadow-2xl"
                             />
                         </motion.div>
-                    </div>
+                    </div> */}
 
-                    <div className="md:w-1/2">
+                    <div className="md:w-1/2 text-center mx-auto">
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
