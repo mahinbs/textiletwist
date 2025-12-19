@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const HeroParallax = () => {
     const ref = useRef(null);
@@ -33,31 +34,31 @@ const HeroParallax = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, ease: "easeOut" }}
             >
+                <h1 className="text-6xl md:text-8xl lg:text-9xl font-serif mb-6 leading-tight! italic font-light">
+                    Textile Twist <br />
+                    <span className="text-secondary">John's</span>
+                </h1>
                 <motion.div
-                    className="inline-block mb-4 px-6 py-2 rounded-full border border-secondary/30 bg-secondary/10 backdrop-blur-md"
+                    className="inline-block mb-8 px-6 py-2 rounded-full border border-secondary/30 bg-secondary/10 backdrop-blur-md"
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5, duration: 0.8 }}
                 >
                     <span className="text-secondary tracking-[0.2em] font-semibold uppercase text-sm md:text-base">
-                        Textile Twist John's
+                        One Thread Infinite Luxury
                     </span>
                 </motion.div>
-                <h1 className="text-6xl md:text-8xl lg:text-9xl font-serif  mb-5 leading-tight! italic font-light">
-                    One Thread <br />
-                    <span className="italic font-light text-secondary">Infinite Luxury</span>
-                </h1>
                 <p className="max-w-xl mx-auto text-gray-200 text-lg md:text-xl font-light mb-10 leading-relaxed">
                     Redefining premium cotton home textiles. Experience the purity of craftsmanship in every weave.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                    <button className="px-10 py-4 bg-secondary text-primary font-bold text-lg rounded-none hover:bg-white transition-colors duration-300 flex items-center gap-2">
+                    <Link to="/products" className="px-10 py-4 bg-secondary text-primary font-bold text-lg rounded-none hover:bg-white transition-colors duration-300 flex items-center gap-2">
                         Explore Collection <ArrowRight className="w-5 h-5" />
-                    </button>
-                    <button className="px-10 py-4 border border-white text-white font-medium text-lg rounded-none hover:bg-white hover:text-primary transition-colors duration-300">
+                    </Link>
+                    <Link to="/contact" className="px-10 py-4 border border-white text-white font-medium text-lg rounded-none hover:bg-white hover:text-primary transition-colors duration-300">
                         B2B Services
-                    </button>
+                    </Link>
                 </div>
             </motion.div>
 

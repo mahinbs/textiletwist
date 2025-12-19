@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Filter } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 const categories = ["All", "Bed Sheets", "Table Linen", "Cushion Covers", "Bath Linen"];
 
@@ -14,7 +14,21 @@ const products = [
 ];
 
 const ProductsPage = () => {
+    const [searchParams] = useSearchParams();
     const [selectedCategory, setSelectedCategory] = useState("All");
+
+    useEffect(() => {
+        const categoryParam = searchParams.get('category');
+        if (categoryParam) {
+            const mappedCategory = {
+                'bed-sheets': 'Bed Sheets',
+                'table-linen': 'Table Linen',
+                'cushion-covers': 'Cushion Covers',
+                'bath-linen': 'Bath Linen'
+            }[categoryParam] || "All";
+            setSelectedCategory(mappedCategory);
+        }
+    }, [searchParams]);
 
     const filteredProducts = selectedCategory === "All"
         ? products

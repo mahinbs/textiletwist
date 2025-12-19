@@ -49,10 +49,16 @@ const ProductDetailsPage = () => {
                     <p className="text-gray-600 leading-relaxed mb-8">{product.description}</p>
 
                     <div className="flex gap-4 mb-10">
-                        <button className="flex-1 bg-primary text-secondary py-4 font-bold text-lg rounded-sm hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg">
+                        <button
+                            onClick={() => alert(`Added ${product.name} to cart!`)}
+                            className="flex-1 bg-primary text-secondary py-4 font-bold text-lg rounded-sm hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg"
+                        >
                             <ShoppingCart className="w-5 h-5" /> Add to Cart
                         </button>
-                        <button className="flex-1 border-2 border-primary text-primary py-4 font-bold text-lg rounded-sm hover:bg-primary hover:text-secondary transition-all">
+                        <button
+                            onClick={() => alert('Proceeding to checkout...')}
+                            className="flex-1 border-2 border-primary text-primary py-4 font-bold text-lg rounded-sm hover:bg-primary hover:text-secondary transition-all"
+                        >
                             Buy Now
                         </button>
                     </div>

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Palette, Ruler, Scissors } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import swatchBookImg from '../../assets/images/swatch-book.png';
 
 const features = [
@@ -39,9 +40,9 @@ const B2BCta = () => {
                             ))}
                         </div>
 
-                        <button className="bg-secondary text-primary font-bold px-8 py-4 rounded-none hover:bg-white transition-all duration-300 flex items-center gap-2 group">
+                        <Link to="/contact" className="inline-flex bg-secondary text-primary font-bold px-8 py-4 rounded-none hover:bg-white transition-all duration-300 items-center gap-2 group w-fit">
                             Request Sample Kit <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </button>
+                        </Link>
                     </div>
 
                     <div className="md:w-1/2 relative z-10">

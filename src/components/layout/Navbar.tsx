@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, ShoppingBag } from 'lucide-react';
+import { Menu, X, ShoppingBag, Heart, User } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 
@@ -65,17 +65,21 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile Menu & Cart */}
-                <div className="flex items-center gap-4">
-                    <button className="text-white hover:text-secondary transition-colors relative">
+                <div className="flex items-center gap-6">
+                    <Link to="/wishlist" className={`${scrolled?'text-white':'text-secondary'} hover:text-secondary transition-colors relative hidden sm:block`}>
+                        <Heart className="w-6 h-6" />
+                    </Link>
+
+                    <Link to="/auth" className={`${scrolled?'text-white':'text-secondary'} hover:text-secondary transition-colors relative hidden sm:block`}>
+                        <User className="w-6 h-6" />
+                    </Link>
+
+                    <Link to="/cart" className={`${scrolled?'text-white':'text-secondary'} hover:text-secondary transition-colors relative`}>
                         <ShoppingBag className="w-6 h-6" />
-                        {/* <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-secondary"></span>
-                        </span> */}
-                    </button>
+                    </Link>
 
                     <button
-                        className="md:hidden text-white hover:text-secondary transition-colors"
+                        className={`${scrolled?'text-white':'text-secondary'} hover:text-secondary transition-colors md:hidden`}
                         onClick={() => setIsOpen(!isOpen)}
                     >
                         {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

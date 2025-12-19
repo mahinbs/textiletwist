@@ -44,26 +44,30 @@ const ContactPage = () => {
                 {/* Contact Form */}
                 <div className="bg-white p-10 rounded-lg shadow-lg border border-gray-100">
                     <h2 className="text-2xl font-serif font-bold text-primary mb-6">Send a Message</h2>
-                    <form className="space-y-6">
+                    <form className="space-y-6" onSubmit={(e) => {
+                        e.preventDefault();
+                        alert("Message sent successfully! We will get back to you soon.");
+                        e.currentTarget.reset();
+                    }}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                                <input type="text" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="John Doe" />
+                                <input required type="text" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="John Doe" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                <input type="email" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="john@example.com" />
+                                <input required type="email" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="john@example.com" />
                             </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                            <input type="text" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="Inquiry about bulk orders" />
+                            <input required type="text" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="Inquiry about bulk orders" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                            <textarea rows={4} className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="Tell us more about your requirements..."></textarea>
+                            <textarea required rows={4} className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="Tell us more about your requirements..."></textarea>
                         </div>
-                        <button type="button" className="w-full bg-primary text-secondary font-bold py-4 rounded-md hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2">
+                        <button type="submit" className="w-full bg-primary text-secondary font-bold py-4 rounded-md hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2">
                             Send Message <Send className="w-5 h-5" />
                         </button>
                     </form>

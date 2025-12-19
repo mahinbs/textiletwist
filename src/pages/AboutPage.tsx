@@ -7,9 +7,9 @@ import ProcessSection from '../components/about/ProcessSection';
 
 const AboutPage = () => {
     return (
-        <div className="pt-20">
+        <div className="">
             {/* Hero Section */}
-            <div className="bg-primary text-white py-24 text-center">
+            <div className="pt-32 bg-primary text-white py-24 text-center">
                 <h1 className="text-5xl font-serif font-bold mb-4">Our Heritage</h1>
                 <p className="text-xl max-w-2xl mx-auto font-light text-gray-200">
                     Weaving stories of luxury and tradition into every thread.
@@ -23,7 +23,7 @@ const AboutPage = () => {
                         <img
                             src="https://images.unsplash.com/photo-1605518216938-7c31b7b14ad0?q=80&w=2009&auto=format&fit=crop"
                             alt="Textile Loom"
-                            className="w-full rounded-lg shadow-xl"
+                            className="w-full rounded-lg shadow-xl h-full object-cover"
                         />
                     </div>
                     <div className="md:w-1/2">
