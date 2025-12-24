@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const AuthPage = () => {
+    const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
 
     return (
         <div className="min-h-screen pt-32 pb-20 px-4 md:px-8 bg-gray-50 flex items-center justify-center">
+            {/* ... background elements ... */}
             <div className="absolute inset-0 z-0 overflow-hidden">
                 <div className="absolute -top-[20%] -right-[10%] w-[70vw] h-[70vw] rounded-full bg-secondary/5 blur-3xl" />
                 <div className="absolute top-[40%] -left-[10%] w-[50vw] h-[50vw] rounded-full bg-primary/5 blur-3xl" />
@@ -54,9 +56,11 @@ const AuthPage = () => {
                     <form className="space-y-5" onSubmit={(e) => {
                         e.preventDefault();
                         if (isLogin) {
-                            alert("Successfully logged in!");
+                            // Dummy login success
+                            navigate('/profile');
                         } else {
-                            alert("Account created successfully!");
+                            // Dummy signup success
+                            navigate('/profile');
                         }
                     }}>
                         <AnimatePresence initial={false}>
