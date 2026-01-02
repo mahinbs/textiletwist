@@ -9,11 +9,21 @@ import CartPage from './pages/CartPage';
 import WishlistPage from './pages/WishlistPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
+import AdminLayout from './components/layout/AdminLayout';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminProductsPage from './pages/admin/AdminProductsPage';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage';
+import AdminCustomersPage from './pages/admin/AdminCustomersPage';
+import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
+
+import AdminLoginPage from './pages/admin/AdminLoginPage';
 
 function App() {
     return (
         <Router>
             <Routes>
+                {/* Main Shop Layout */}
                 <Route path="/" element={<Layout />}>
                     <Route index element={<HomePage />} />
                     <Route path="about" element={<AboutPage />} />
@@ -24,6 +34,19 @@ function App() {
                     <Route path="wishlist" element={<WishlistPage />} />
                     <Route path="auth" element={<AuthPage />} />
                     <Route path="profile" element={<ProfilePage />} />
+                </Route>
+
+                {/* Admin Auth */}
+                <Route path="/admin/login" element={<AdminLoginPage />} />
+
+                {/* Admin Layout */}
+                <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<AdminDashboardPage />} />
+                    <Route path="analytics" element={<AdminAnalyticsPage />} />
+                    <Route path="products" element={<AdminProductsPage />} />
+                    <Route path="orders" element={<AdminOrdersPage />} />
+                    <Route path="customers" element={<AdminCustomersPage />} />
+                    <Route path="settings" element={<AdminSettingsPage />} />
                 </Route>
             </Routes>
         </Router>
