@@ -19,14 +19,14 @@ const ContactPage = () => {
                             <MapPin className="w-6 h-6 text-secondary flex-shrink-0" />
                             <div>
                                 <h3 className="font-bold text-secondary mb-1">Visit Us</h3>
-                                <p className="text-gray-200">123 Textile Ave, Fashion District,<br />Mumbai, India - 400001</p>
+                                <p className="text-gray-200">Address 574 2nd Floor <br />Pocket 4 Omaxe New Chandigarh</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-4">
                             <Phone className="w-6 h-6 text-secondary flex-shrink-0" />
                             <div>
                                 <h3 className="font-bold text-secondary mb-1">Call Us</h3>
-                                <p className="text-gray-200">+91 0000000000</p>
+                                <p className="text-gray-200">+91 9463583983</p>
                                 <p className="text-gray-400 text-sm">Mon - Sat, 9am - 7pm</p>
                             </div>
                         </div>
@@ -34,8 +34,7 @@ const ContactPage = () => {
                             <Mail className="w-6 h-6 text-secondary flex-shrink-0" />
                             <div>
                                 <h3 className="font-bold text-secondary mb-1">Email Us</h3>
-                                <p className="text-gray-200">info@example.com</p>
-                                <p className="text-gray-200">sales@textiletwist.com</p>
+                                <p className="text-gray-200">whyanita30@gmail.com</p>
                             </div>
                         </div>
                     </div>
@@ -46,26 +45,40 @@ const ContactPage = () => {
                     <h2 className="text-2xl font-serif font-bold text-primary mb-6">Send a Message</h2>
                     <form className="space-y-6" onSubmit={(e) => {
                         e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        const newEnquiry = {
+                            id: Date.now().toString(),
+                            name: formData.get('name') as string,
+                            email: formData.get('email') as string,
+                            subject: formData.get('subject') as string,
+                            message: formData.get('message') as string,
+                            date: new Date().toISOString(),
+                            status: 'new'
+                        };
+
+                        const existingEnquiries = JSON.parse(localStorage.getItem('contact_enquiries') || '[]');
+                        localStorage.setItem('contact_enquiries', JSON.stringify([newEnquiry, ...existingEnquiries]));
+
                         alert("Message sent successfully! We will get back to you soon.");
                         e.currentTarget.reset();
                     }}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                                <input required type="text" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="John Doe" />
+                                <input name="name" required type="text" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="John Doe" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                <input required type="email" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="john@example.com" />
+                                <input name="email" required type="email" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="john@example.com" />
                             </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                            <input required type="text" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="Inquiry about bulk orders" />
+                            <input name="subject" required type="text" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="Inquiry about bulk orders" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                            <textarea required rows={4} className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="Tell us more about your requirements..."></textarea>
+                            <textarea name="message" required rows={4} className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="Tell us more about your requirements..."></textarea>
                         </div>
                         <button type="submit" className="w-full bg-primary text-secondary font-bold py-4 rounded-md hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2">
                             Send Message <Send className="w-5 h-5" />
