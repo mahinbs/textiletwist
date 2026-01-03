@@ -62,9 +62,12 @@ const HeroParallax = () => {
                 </div>
             </motion.div>
 
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 animate-bounce text-white/50">
+            <motion.div
+                style={{ opacity: useTransform(scrollYProgress, [0, 0.2], [1, 0]) }}
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 animate-bounce text-white/50"
+            >
                 <span className="text-xs uppercase tracking-widest">Scroll to Discover</span>
-            </div>
+            </motion.div>
         </div>
     );
 };

@@ -5,7 +5,6 @@ import FeaturedCollections from '../components/home/FeaturedCollections';
 import BrandMarquee from '../components/home/BrandMarquee';
 import TestimonialSlider from '../components/home/TestimonialSlider';
 import WhyChooseUs from '../components/home/WhyChooseUs';
-import B2BCta from '../components/home/B2BCta';
 
 const HomePage = () => {
     return (
@@ -15,7 +14,7 @@ const HomePage = () => {
             <FeaturedCollections />
             <BrandMarquee />
             <WhyChooseUs />
-            <B2BCta />
+            {/* <B2BCta /> */}
             <TestimonialSlider />
         </div>
     );

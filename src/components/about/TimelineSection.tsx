@@ -1,10 +1,7 @@
 import { motion } from 'framer-motion';
 
 const milestones = [
-    { year: "1985", title: "The Beginning", desc: "Started as a small family loom in Mumbai." },
-    { year: "1998", title: "Going Global", desc: "First international export to European markets." },
-    { year: "2010", title: "Innovation", desc: "Launched signature 'One-Thread' technology." },
-    { year: "2023", title: "Sustainability Leader", desc: "Achieved 100% organic cotton certification." }
+    { year: "2025", title: "The Beginning", desc: "Embarking on a journey to provide premium quality textiles worldwide." }
 ];
 
 const TimelineSection = () => {

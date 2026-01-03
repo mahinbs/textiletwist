@@ -2,10 +2,10 @@ import { motion } from 'framer-motion';
 import { Truck, CheckCircle, Clock, Globe } from 'lucide-react';
 
 const benefits = [
-    { icon: Globe, title: "Global Reach", desc: "Exporting to over 30 countries with reliable logistics." },
-    { icon: CheckCircle, title: "Certified Quality", desc: "Oeko-Tex Standard 100 certified fabrics." },
-    { icon: Truck, title: "Bulk Efficiency", desc: "Optimized for large-scale B2B orders." },
-    { icon: Clock, title: "On-Time Delivery", desc: "99.8% timely delivery rate for the last 5 years." },
+    { icon: Globe, title: "Global Shipping", desc: "Delivering to customers with trusted logistics partners." },
+    { icon: CheckCircle, title: "Premium Quality", desc: "Finest materials ensuring superior durability and comfort." },
+    { icon: Truck, title: "Bulk Orders", desc: "Streamlined processing for large-scale and B2B requirements." },
+    { icon: Clock, title: "Timely Delivery", desc: "Committed to ensuring your orders arrive on schedule." },
 ];
 
 const WhyChooseUs = () => {

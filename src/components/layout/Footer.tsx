@@ -12,7 +12,7 @@ const Footer = () => {
                         <h3 className="text-3xl font-serif font-bold text-secondary">Textile Twist</h3>
                         <p className="text-gray-300 leading-relaxed">
                             Crafting premium cotton home textiles with precision and passion.
-                            Elevating living spaces with our "one-thread fabric" innovation.
+                            Elevating living spaces with our "Quality-Thread fabric" innovation.
                         </p>
                         <div className="flex space-x-4 pt-2">
                             <a href="#" className="text-gold hover:text-white transition-colors"><Facebook className="w-5 h-5" /></a>
@@ -50,7 +50,7 @@ const Footer = () => {
                         <ul className="space-y-4">
                             <li className="flex items-start space-x-3">
                                 <MapPin className="w-5 h-5 text-secondary mt-1 flex-shrink-0" />
-                                <span className="text-gray-300">Address 574 2nd Floor Pocket 4 Omaxe New Chandigarh </span>
+                                <span className="text-gray-300">574, 2nd Floor Pocket 4 Omaxe New Chandigarh </span>
                             </li>
                             <li className="flex items-center space-x-3">
                                 <Phone className="w-5 h-5 text-secondary flex-shrink-0" />

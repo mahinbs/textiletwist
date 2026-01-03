@@ -11,7 +11,7 @@ const testimonials = [
     {
         name: "Elena Rossi",
         role: "Hotel Manager, Venice",
-        text: "Textile Twist has completely transformed our guest experience. The durability of the 'One-Thread' cotton withstands industrial laundering while maintaining that premium silk-like feel. Outstanding quality."
+        text: "Textile Twist has completely transformed our guest experience. The durability of the 'Quality-Thread' cotton withstands industrial laundering while maintaining that premium silk-like feel. Outstanding quality."
     },
     {
         name: "David Chen",

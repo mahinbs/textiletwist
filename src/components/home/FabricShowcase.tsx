@@ -33,18 +33,15 @@ const FabricShowcase = () => {
                         >
                             <h2 className="text-sm font-bold tracking-widest text-secondary uppercase mb-4">Innovation</h2>
                             <h3 className="text-5xl md:text-6xl font-serif font-bold text-primary mb-8 leading-tight">
-                                The One-Thread <br /> Revolution
+                                The Quality-Thread <br /> Revolution
                             </h3>
                             <p className="text-gray-600 text-lg leading-relaxed mb-8 font-light">
-                                Unlike conventional textiles, our signature "One-Thread Fabric" technology ensures that every inch of fabric is woven from a continuous, unbroken strand of premium cotton.
+                                Unlike conventional textiles, our signature "Quality-Thread Fabric" technology ensures that every inch of fabric is woven from a continuous, unbroken strand of premium cotton.
                                 This results in a surface so smooth, it feels like liquid silk against the skin, while maintaining the durability of heavy-duty canvas.
                             </p>
                             <p className="text-gray-600 text-lg leading-relaxed mb-12 font-light">
                                 Designed for the modern luxury home, our fabrics breathe, adapt, and endure, setting a new standard for B2B excellence.
                             </p>
-                            <a href="/about" className="text-primary font-bold text-lg border-b-2 border-secondary pb-1 hover:text-secondary hover:border-primary transition-colors">
-                                Discover Our Process
-                            </a>
                         </motion.div>
                     </div>
                 </div>

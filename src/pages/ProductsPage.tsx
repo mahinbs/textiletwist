@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Filter, ArrowUpDown } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-const categories = ["All", "Bed Sheets", "Table Linen", "Cushion Covers", "Bath Linen", "Royal collection for furnishing and wall hangings"];
+const categories = ["All", "Bed Sheets", "Table Linen", "Cushion Covers", "Bath Linen", "Apparels", "Royal collection for furnishing and wall hangings"];
 
 const products = [
     { id: 1, name: "Royal Satin Bed Sheet", category: "Bed Sheets", price: "₹ 1,500", image: "/images/bed-linen.png" },
@@ -11,6 +11,8 @@ const products = [
     { id: 4, name: "Cotton Duvet Set", category: "Bed Sheets", price: "₹ 2,200", image: "/images/bed-linen.png" },
     { id: 5, name: "Floral Table Cloth", category: "Table Linen", price: "₹ 1,200", image: "/images/table-linen.png" },
     { id: 6, name: "Velvet Cushion Set", category: "Cushion Covers", price: "₹ 1,800", image: "/images/cushion.png" },
+    { id: 7, name: "Cotton Lounge Set", category: "Apparels", price: "₹ 2,500", image: "/images/bed-linen.png" },
+    { id: 8, name: "Silk Kimono Robe", category: "Apparels", price: "₹ 4,500", image: "/images/bed-linen.png" },
 ];
 
 const ProductsPage = () => {
@@ -24,7 +26,8 @@ const ProductsPage = () => {
                 'bed-sheets': 'Bed Sheets',
                 'table-linen': 'Table Linen',
                 'cushion-covers': 'Cushion Covers',
-                'bath-linen': 'Bath Linen'
+                'bath-linen': 'Bath Linen',
+                'apparels': 'Apparels'
             }[categoryParam] || "All";
             setSelectedCategory(mappedCategory);
         }

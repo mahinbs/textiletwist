@@ -1,8 +1,8 @@
 import { Filter, Layers, CheckSquare } from 'lucide-react';
 
 const steps = [
-    { icon: Filter, title: "01. Ethical Sourcing", desc: "We select only the finest long-staple cotton from certified organic farms." },
-    { icon: Layers, title: "02. Precision Weaving", desc: "Our 'One-Thread' looms create fabric with 300+ thread counts without compromising breathability." },
+    { icon: Filter, title: "01. Ethical Sourcing", desc: "We select only the finest long-staple cotton." },
+    { icon: Layers, title: "02. Precision Weaving", desc: "Our 'Quality-Thread' looms create fabric with 300+ thread counts without compromising breathability." },
     { icon: CheckSquare, title: "03. Quality Control", desc: "Each yard undergoes a 4-point inspection system before shipping." },
 ];
 

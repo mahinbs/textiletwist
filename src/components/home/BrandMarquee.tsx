@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 
 const brandValues = [
-    "Premium Cotton", "Sustainable Luxury", "Global Shipping", "One-Thread Tech", "Hotel Grade Durability", "Artisan Craftsmanship"
+    "Premium Cotton", "Sustainable Luxury", "Global Shipping", "Quality-Thread Tech", "Hotel Grade Durability", "Artisan Craftsmanship"
 ];
 
 const BrandMarquee = () => {

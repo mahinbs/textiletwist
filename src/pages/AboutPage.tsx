@@ -21,9 +21,9 @@ const AboutPage = () => {
                 <div className="flex flex-col md:flex-row gap-12 items-center">
                     <div className="md:w-1/2">
                         <img
-                            src="https://images.unsplash.com/photo-1605518216938-7c31b7b14ad0?q=80&w=2009&auto=format&fit=crop"
-                            alt="Textile Loom"
-                            className="w-full rounded-lg shadow-xl h-full object-cover"
+                            src="/images/about_legacy_textile.png"
+                            alt="Textile Twist Workshop"
+                            className="w-full rounded-lg shadow-xl h-full object-cover aspect-[4/3] md:aspect-video"
                         />
                     </div>
                     <div className="md:w-1/2">
@@ -34,7 +34,7 @@ const AboutPage = () => {
                             synonymous with quality and sustainability.
                         </p>
                         <p className="text-gray-700 leading-relaxed">
-                            Our "One-Thread Fabric" innovation represents years of research, resulting in textiles that offer
+                            Our "Quality-Thread Fabric" innovation represents years of research, resulting in textiles that offer
                             unmatched softness, durability, and a flawless finish that defines B2B luxury.
                         </p>
                     </div>
@@ -53,7 +53,7 @@ const AboutPage = () => {
                         {[
                             { icon: History, title: "Decades of Trust", desc: "Established reputation in premium cotton markets." },
                             { icon: Leaf, title: "Sustainable", desc: "Eco-friendly processes and ethically sourced cotton." },
-                            { icon: Feather, title: "Premium Feel", desc: "Signature one-thread technology for ultra-softness." },
+                            { icon: Feather, title: "Premium Feel", desc: "Signature Quality-Thread technology for ultra-softness." },
                             { icon: Award, title: "Quality Assured", desc: "Rigorous quality checks at every production stage." }
                         ].map((item, index) => (
                             <motion.div
