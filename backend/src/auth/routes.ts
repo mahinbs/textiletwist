@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { supabase } from '../supabase/client.js';
+import { supabase, supabaseAdmin } from '../supabase/client.js';
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -15,17 +15,19 @@ const router = Router();
  * POST /auth/signup
  * Register a new user with email and password
  */
-router.post('/signup', async (req: Request, res: Response) => {
+router.post('/signup', async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, fullName } = req.body;
 
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      res.status(400).json({ error: 'Email and password are required' });
+      return;
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+      res.status(400).json({ error: 'Password must be at least 6 characters' });
+      return;
     }
 
     // Sign up user
@@ -40,15 +42,17 @@ router.post('/signup', async (req: Request, res: Response) => {
     });
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      res.status(400).json({ error: error.message });
+      return;
     }
 
     if (!data.session || !data.user) {
       // Email confirmation might be required
-      return res.status(200).json({
+      res.status(200).json({
         message: 'Signup successful. Please check your email for verification.',
         user: data.user,
       });
+      return;
     }
 
     // Set auth cookies
@@ -63,9 +67,11 @@ router.post('/signup', async (req: Request, res: Response) => {
         full_name: data.user.user_metadata?.full_name,
       },
     });
+    return;
   } catch (error) {
     console.error('Signup error:', error);
     res.status(500).json({ error: 'Signup failed' });
+    return;
   }
 });
 
@@ -73,13 +79,14 @@ router.post('/signup', async (req: Request, res: Response) => {
  * POST /auth/login
  * Sign in with email and password
  */
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      res.status(400).json({ error: 'Email and password are required' });
+      return;
     }
 
     // Sign in user
@@ -89,16 +96,25 @@ router.post('/login', async (req: Request, res: Response) => {
     });
 
     if (error) {
-      return res.status(401).json({ error: error.message });
+      res.status(401).json({ error: error.message });
+      return;
     }
 
     if (!data.session || !data.user) {
-      return res.status(401).json({ error: 'Login failed' });
+      res.status(401).json({ error: 'Login failed' });
+      return;
     }
 
     // Set auth cookies
     res.cookie(ACCESS_TOKEN_COOKIE, data.session.access_token, cookieOptions);
     res.cookie(REFRESH_TOKEN_COOKIE, data.session.refresh_token, refreshCookieOptions);
+
+    // Get user profile to check role
+    const { data: profile } = await supabaseAdmin!
+      .from('user_profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
 
     res.status(200).json({
       message: 'Login successful',
@@ -106,11 +122,14 @@ router.post('/login', async (req: Request, res: Response) => {
         id: data.user.id,
         email: data.user.email,
         full_name: data.user.user_metadata?.full_name,
+        role: profile?.role || 'user',
       },
     });
+    return;
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
+    return;
   }
 });
 
@@ -118,7 +137,7 @@ router.post('/login', async (req: Request, res: Response) => {
  * POST /auth/logout
  * Sign out and clear cookies
  */
-router.post('/logout', async (req: Request, res: Response) => {
+router.post('/logout', async (req: Request, res: Response): Promise<void> => {
   try {
     const accessToken = req.cookies[ACCESS_TOKEN_COOKIE];
 
@@ -132,12 +151,14 @@ router.post('/logout', async (req: Request, res: Response) => {
     res.clearCookie(REFRESH_TOKEN_COOKIE, clearCookieOptions);
 
     res.status(200).json({ message: 'Logout successful' });
+    return;
   } catch (error) {
     console.error('Logout error:', error);
     // Still clear cookies even if Supabase signout fails
     res.clearCookie(ACCESS_TOKEN_COOKIE, clearCookieOptions);
     res.clearCookie(REFRESH_TOKEN_COOKIE, clearCookieOptions);
     res.status(200).json({ message: 'Logout successful' });
+    return;
   }
 });
 
@@ -145,11 +166,19 @@ router.post('/logout', async (req: Request, res: Response) => {
  * GET /auth/me
  * Get current authenticated user
  */
-router.get('/me', requireAuth, (req: Request, res: Response) => {
+router.get('/me', requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) {
-      return res.status(401).json({ error: 'Not authenticated' });
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
     }
+
+    // Get user profile to check role
+    const { data: profile } = await supabaseAdmin!
+      .from('user_profiles')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
 
     res.status(200).json({
       user: {
@@ -157,11 +186,14 @@ router.get('/me', requireAuth, (req: Request, res: Response) => {
         email: req.user.email,
         full_name: req.user.user_metadata?.full_name,
         created_at: req.user.created_at,
+        role: profile?.role || 'user',
       },
     });
+    return;
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to get user' });
+    return;
   }
 });
 
@@ -169,12 +201,13 @@ router.get('/me', requireAuth, (req: Request, res: Response) => {
  * POST /auth/refresh
  * Refresh access token using refresh token
  */
-router.post('/refresh', async (req: Request, res: Response) => {
+router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
   try {
     const refreshToken = req.cookies[REFRESH_TOKEN_COOKIE];
 
     if (!refreshToken) {
-      return res.status(401).json({ error: 'Refresh token not found' });
+      res.status(401).json({ error: 'Refresh token not found' });
+      return;
     }
 
     // Refresh the session
@@ -185,7 +218,8 @@ router.post('/refresh', async (req: Request, res: Response) => {
     if (error || !data.session) {
       res.clearCookie(ACCESS_TOKEN_COOKIE, clearCookieOptions);
       res.clearCookie(REFRESH_TOKEN_COOKIE, clearCookieOptions);
-      return res.status(401).json({ error: 'Failed to refresh token' });
+      res.status(401).json({ error: 'Failed to refresh token' });
+      return;
     }
 
     // Update cookies with new tokens
@@ -200,9 +234,75 @@ router.post('/refresh', async (req: Request, res: Response) => {
         full_name: data.user?.user_metadata?.full_name,
       },
     });
+    return;
   } catch (error) {
     console.error('Token refresh error:', error);
     res.status(500).json({ error: 'Token refresh failed' });
+    return;
+  }
+});
+
+/**
+ * PUT /auth/change-password
+ * Change user password (requires current password)
+ */
+router.put('/change-password', requireAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ error: 'Current password and new password are required' });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({ error: 'New password must be at least 6 characters' });
+      return;
+    }
+
+    // Verify current password by attempting to sign in
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: req.user.email!,
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      res.status(401).json({ error: 'Current password is incorrect' });
+      return;
+    }
+
+    // Update password using Supabase Admin API
+    // Note: This requires service role key
+    const { supabaseAdmin } = await import('../supabase/client.js');
+    
+    if (!supabaseAdmin) {
+      res.status(500).json({ error: 'Admin client not available' });
+      return;
+    }
+
+    // Update password
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      req.user.id,
+      { password: newPassword }
+    );
+
+    if (updateError) {
+      console.error('Password update error:', updateError);
+      res.status(400).json({ error: updateError.message || 'Failed to update password' });
+      return;
+    }
+
+    res.status(200).json({ message: 'Password updated successfully' });
+    return;
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Failed to change password' });
+    return;
   }
 });
 

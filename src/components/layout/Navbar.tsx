@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Menu, X, ShoppingBag, Heart, User, Plus, } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
+import { categoriesApi } from '../../lib/api';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+    const [categories, setCategories] = useState<any[]>([]);
     const location = useLocation();
     const navRef = useRef<HTMLDivElement>(null);
 
@@ -16,6 +18,17 @@ const Navbar = () => {
         };
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // Fetch categories from backend
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const response = await categoriesApi.getAll();
+            if (response.data) {
+                setCategories(response.data.categories || []);
+            }
+        };
+        fetchCategories();
     }, []);
 
     // Close mobile menu when route changes
@@ -38,28 +51,44 @@ const Navbar = () => {
         };
     }, []);
 
+    // Build nav links with dynamic categories
+    const activeCategories = categories.filter(cat => cat.is_active);
+    
+    // Separate regular products from Apparels
+    const productCategories = activeCategories.filter(cat => 
+        !cat.slug?.startsWith('apparels-') && cat.slug !== 'apparels'
+    );
+    const apparelsCategories = activeCategories.filter(cat => 
+        cat.slug?.startsWith('apparels-') || cat.slug === 'apparels'
+    );
+    
+    // Build Apparels submenu (Men, Women, Kids)
+    const apparelsSubItems = apparelsCategories.length > 0
+        ? apparelsCategories.map(cat => ({
+            name: cat.name,
+            path: `/products?category=${cat.slug}`,
+        }))
+        : [
+            { name: 'Men', path: '/products?category=apparels-men' },
+            { name: 'Women', path: '/products?category=apparels-women' },
+            { name: 'Kids', path: '/products?category=apparels-kids' },
+        ];
+    
     const navLinks = [
         { name: 'Home', path: '/' },
         { name: 'About Us', path: '/about' },
         {
             name: 'Products',
             path: '/products',
-            subItems: [
-                { name: 'Bed Sheets', path: '/products?category=bed-sheets' },
-                { name: 'Table Linen', path: '/products?category=table-linen' },
-                { name: 'Cushion Covers', path: '/products?category=cushion-covers' },
-                { name: 'Bath Linen', path: '/products?category=bath-linen' },
-                { name: 'Royal Collection', path: '/products?category=royal-collection' },
-            ]
+            subItems: productCategories.length > 0 ? productCategories.map(cat => ({
+                name: cat.name,
+                path: `/products?category=${cat.slug}`,
+            })) : []
         },
         {
             name: 'Apparels',
             path: '/products?category=apparels',
-            subItems: [
-                { name: 'Men', path: '/products?category=apparels-men' },
-                { name: 'Women', path: '/products?category=apparels-women' },
-                { name: 'Kids', path: '/products?category=apparels-kids' },
-            ]
+            subItems: apparelsSubItems
         },
         { name: 'Contact', path: '/contact' },
     ];

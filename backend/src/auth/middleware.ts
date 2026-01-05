@@ -16,19 +16,21 @@ declare global {
  * Middleware to require authentication
  * Verifies the access token from cookies and attaches user to req.user
  */
-export async function requireAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const accessToken = req.cookies[ACCESS_TOKEN_COOKIE];
 
     if (!accessToken) {
-      return res.status(401).json({ error: 'Authentication required' });
+      res.status(401).json({ error: 'Authentication required' });
+      return;
     }
 
     // Verify token and get user
     const user = await verifyToken(accessToken);
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
     }
 
     // Attach user to request
@@ -36,7 +38,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return res.status(401).json({ error: 'Authentication failed' });
+    res.status(401).json({ error: 'Authentication failed' });
   }
 }
 
@@ -44,7 +46,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
  * Optional auth middleware - doesn't fail if no token
  * Attaches user to req.user if valid token exists
  */
-export async function optionalAuth(req: Request, res: Response, next: NextFunction) {
+export async function optionalAuth(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     const accessToken = req.cookies[ACCESS_TOKEN_COOKIE];
 

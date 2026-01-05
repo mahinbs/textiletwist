@@ -1,45 +1,109 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowRight, Loader2 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { cartApi, ordersApi } from '../lib/api';
 
 const CartPage = () => {
-    // Initial Mock Data with reliable images
-    const [cartItems, setCartItems] = useState([
-        {
-            id: 1,
-            name: "Royal Velvet Cushion",
-            variant: "Deep Emerald",
-            price: 1299,
-            quantity: 2,
-            image: "/images/cushion.png"
-        },
-        {
-            id: 2,
-            name: "Egyptian Cotton Sheets",
-            variant: "Ivory / Queen",
-            price: 4599,
-            quantity: 1,
-            image: "/images/bed-linen.png"
+    const navigate = useNavigate();
+    const [cartItems, setCartItems] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [updating, setUpdating] = useState<string | null>(null);
+    const [checkingOut, setCheckingOut] = useState(false);
+
+    useEffect(() => {
+        fetchCart();
+    }, []);
+
+    const fetchCart = async () => {
+        setLoading(true);
+        const response = await cartApi.getAll();
+        if (response.data) {
+            setCartItems(response.data.cart || []);
         }
-    ]);
-
-    const updateQuantity = (id: number, delta: number) => {
-        setCartItems(prev => prev.map(item => {
-            if (item.id === id) {
-                const newQuantity = Math.max(1, item.quantity + delta);
-                return { ...item, quantity: newQuantity };
-            }
-            return item;
-        }));
+        setLoading(false);
     };
 
-    const removeItem = (id: number) => {
-        setCartItems(prev => prev.filter(item => item.id !== id));
+    const updateQuantity = async (id: string, delta: number) => {
+        const item = cartItems.find(i => i.id === id);
+        if (!item) return;
+
+        const newQuantity = Math.max(1, item.quantity + delta);
+        setUpdating(id);
+        const response = await cartApi.update(id, newQuantity);
+        if (!response.error) {
+            await fetchCart();
+        }
+        setUpdating(null);
     };
 
-    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const shipping = subtotal > 5000 ? 0 : 500; // Free shipping over 5000
-    const tax = Math.round(subtotal * 0.18); // 18% GST
+    const removeItem = async (id: string) => {
+        setUpdating(id);
+        const response = await cartApi.remove(id);
+        if (!response.error) {
+            await fetchCart();
+        }
+        setUpdating(null);
+    };
+
+    const handleCheckout = async () => {
+        if (cartItems.length === 0) return;
+
+        // For now, redirect to a checkout page or show form
+        // In a real app, you'd collect shipping info first
+        const customerName = prompt('Enter your name:');
+        const customerEmail = prompt('Enter your email:');
+        const customerPhone = prompt('Enter your phone:');
+        const shippingAddress = prompt('Enter shipping address:');
+
+        if (!customerName || !customerEmail || !customerPhone || !shippingAddress) {
+            alert('All fields are required');
+            return;
+        }
+
+        setCheckingOut(true);
+
+        // Prepare order data
+        const orderData = {
+            cart_items: cartItems.map(item => ({
+                product_id: item.product_id,
+                quantity: item.quantity,
+                product: item.product,
+            })),
+            customer_name: customerName,
+            customer_email: customerEmail,
+            customer_phone: customerPhone,
+            shipping_address: shippingAddress,
+            shipping_cost: subtotal > 5000 ? 0 : 500,
+        };
+
+        const response = await ordersApi.create(orderData);
+        if (response.error) {
+            alert(response.error);
+        } else {
+            alert('Order placed successfully!');
+            navigate('/profile');
+        }
+        setCheckingOut(false);
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen pt-32 pb-20 px-4 md:px-8 bg-gray-50 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    const subtotal = cartItems.reduce((sum, item) => {
+        const product = item.product;
+        if (!product) return sum;
+        const price = product.price * (1 - (product.discount_percentage || 0) / 100);
+        return sum + (price * item.quantity);
+    }, 0);
+
+    const shipping = subtotal > 5000 ? 0 : 500;
+    const tax = Math.round(subtotal * 0.18);
     const total = subtotal + shipping + tax;
 
     return (
@@ -55,51 +119,77 @@ const CartPage = () => {
                         {/* Cart Items */}
                         <div className="flex-1 space-y-6">
                             <AnimatePresence>
-                                {cartItems.map((item) => (
-                                    <motion.div
-                                        key={item.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, x: -100 }}
-                                        layout
-                                        className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-6 items-center"
-                                    >
-                                        <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 rounded-xl overflow-hidden bg-gray-100">
-                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h3 className="text-xl font-serif font-bold text-primary">{item.name}</h3>
-                                                <button
-                                                    onClick={() => removeItem(item.id)}
-                                                    className="text-gray-400 hover:text-red-500 transition-colors"
-                                                >
-                                                    <Trash2 size={20} />
-                                                </button>
+                                {cartItems.map((item) => {
+                                    const product = item.product;
+                                    if (!product) return null;
+
+                                    const price = product.price * (1 - (product.discount_percentage || 0) / 100);
+                                    const itemTotal = price * item.quantity;
+
+                                    return (
+                                        <motion.div
+                                            key={item.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, x: -100 }}
+                                            layout
+                                            className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-6 items-center"
+                                        >
+                                            <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 rounded-xl overflow-hidden bg-gray-100">
+                                                <img
+                                                    src={product.image_url || product.images?.[0] || "/images/bed-linen.png"}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
-                                            <p className="text-gray-500 text-sm mb-4">{item.variant}</p>
-                                            <div className="flex justify-between items-end">
-                                                <div className="flex items-center gap-3 bg-gray-50 rounded-full px-4 py-1.5 border border-gray-200">
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <h3 className="text-xl font-serif font-bold text-primary">{product.name}</h3>
                                                     <button
-                                                        onClick={() => updateQuantity(item.id, -1)}
-                                                        className="text-gray-500 hover:text-primary transition-colors disabled:opacity-50"
-                                                        disabled={item.quantity <= 1}
+                                                        onClick={() => removeItem(item.id)}
+                                                        disabled={updating === item.id}
+                                                        className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
                                                     >
-                                                        <Minus size={16} />
-                                                    </button>
-                                                    <span className="font-semibold text-primary w-4 text-center">{item.quantity}</span>
-                                                    <button
-                                                        onClick={() => updateQuantity(item.id, 1)}
-                                                        className="text-gray-500 hover:text-primary transition-colors"
-                                                    >
-                                                        <Plus size={16} />
+                                                        {updating === item.id ? (
+                                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                                        ) : (
+                                                            <Trash2 size={20} />
+                                                        )}
                                                     </button>
                                                 </div>
-                                                <p className="text-xl font-bold text-primary">₹{(item.price * item.quantity).toLocaleString()}</p>
+                                                <p className="text-gray-500 text-sm mb-4">
+                                                    ₹{Math.round(price).toLocaleString()} each
+                                                </p>
+                                                <div className="flex justify-between items-end">
+                                                    <div className="flex items-center gap-3 bg-gray-50 rounded-full px-4 py-1.5 border border-gray-200">
+                                                        <button
+                                                            onClick={() => updateQuantity(item.id, -1)}
+                                                            disabled={updating === item.id || item.quantity <= 1}
+                                                            className="text-gray-500 hover:text-primary transition-colors disabled:opacity-50"
+                                                        >
+                                                            <Minus size={16} />
+                                                        </button>
+                                                        <span className="font-semibold text-primary w-4 text-center">
+                                                            {updating === item.id ? (
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                            ) : (
+                                                                item.quantity
+                                                            )}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => updateQuantity(item.id, 1)}
+                                                            disabled={updating === item.id}
+                                                            className="text-gray-500 hover:text-primary transition-colors disabled:opacity-50"
+                                                        >
+                                                            <Plus size={16} />
+                                                        </button>
+                                                    </div>
+                                                    <p className="text-xl font-bold text-primary">₹{Math.round(itemTotal).toLocaleString()}</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
+                                        </motion.div>
+                                    );
+                                })}
                             </AnimatePresence>
                         </div>
 
@@ -114,7 +204,7 @@ const CartPage = () => {
                             <div className="space-y-4 mb-8">
                                 <div className="flex justify-between text-gray-600">
                                     <span>Subtotal</span>
-                                    <span className="font-semibold">₹{subtotal.toLocaleString()}</span>
+                                    <span className="font-semibold">₹{Math.round(subtotal).toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between text-gray-600">
                                     <span>Shipping</span>
@@ -129,15 +219,24 @@ const CartPage = () => {
                                 <div className="h-px bg-gray-100 my-4" />
                                 <div className="flex justify-between text-xl font-bold text-primary">
                                     <span>Total</span>
-                                    <span>₹{total.toLocaleString()}</span>
+                                    <span>₹{Math.round(total).toLocaleString()}</span>
                                 </div>
                             </div>
 
                             <button
-                                onClick={() => alert("Proceeding to checkout...")}
-                                className="w-full py-4 bg-primary text-secondary font-bold rounded-lg hover:bg-black transition-all duration-300 flex items-center justify-center gap-2 mb-4"
+                                onClick={handleCheckout}
+                                disabled={checkingOut}
+                                className="w-full py-4 bg-primary text-secondary font-bold rounded-lg hover:bg-black transition-all duration-300 flex items-center justify-center gap-2 mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Checkout Now <ArrowRight size={20} />
+                                {checkingOut ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" /> Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        Checkout Now <ArrowRight size={20} />
+                                    </>
+                                )}
                             </button>
                             <p className="text-center text-xs text-gray-400">Secure Encrypted Checkout</p>
                         </motion.div>
@@ -149,9 +248,9 @@ const CartPage = () => {
                         className="text-center py-20"
                     >
                         <p className="text-xl text-gray-400 font-serif mb-8">Your cart is currently empty.</p>
-                        <a href="/products" className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors inline-block">
+                        <Link to="/products" className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors inline-block">
                             Start Shopping
-                        </a>
+                        </Link>
                     </motion.div>
                 )}
             </div>

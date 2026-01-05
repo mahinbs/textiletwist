@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingBag, Users, X, Settings, BarChart3, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Users, X, Settings, BarChart3, MessageSquare, FolderTree } from 'lucide-react';
 
 interface AdminSidebarProps {
     isOpen: boolean;
@@ -21,6 +21,7 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
         { path: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
         { path: '/admin/enquiries', icon: MessageSquare, label: 'Enquiries' },
         { path: '/admin/products', icon: Package, label: 'Products' },
+        { path: '/admin/categories', icon: FolderTree, label: 'Categories' },
         { path: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
         { path: '/admin/customers', icon: Users, label: 'Customers' },
         { path: '/admin/settings', icon: Settings, label: 'Settings' },

@@ -17,6 +17,7 @@ import AdminCustomersPage from './pages/admin/AdminCustomersPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
 import AdminEnquiriesPage from './pages/admin/AdminEnquiriesPage';
+import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 
@@ -46,6 +47,7 @@ function App() {
                     <Route path="analytics" element={<AdminAnalyticsPage />} />
                     <Route path="enquiries" element={<AdminEnquiriesPage />} />
                     <Route path="products" element={<AdminProductsPage />} />
+                    <Route path="categories" element={<AdminCategoriesPage />} />
                     <Route path="orders" element={<AdminOrdersPage />} />
                     <Route path="customers" element={<AdminCustomersPage />} />
                     <Route path="settings" element={<AdminSettingsPage />} />

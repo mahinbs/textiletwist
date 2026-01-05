@@ -1,14 +1,12 @@
-import { config } from 'dotenv';
+// Load environment variables FIRST
+import { env } from './config/env.js';
 import app from './app.js';
 
-// Load environment variables
-config();
-
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(env.PORT, 10);
 
 // Validate required environment variables
 const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];
-const missingEnvVars = requiredEnvVars.filter((varName) => !process.env[varName]);
+const missingEnvVars = requiredEnvVars.filter((varName) => !env[varName as keyof typeof env]);
 
 if (missingEnvVars.length > 0) {
   console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
@@ -19,7 +17,7 @@ if (missingEnvVars.length > 0) {
 // Start server
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Supabase URL: ${process.env.SUPABASE_URL}`);
+  console.log(`📊 Environment: ${env.NODE_ENV}`);
+  console.log(`🔗 Supabase URL: ${env.SUPABASE_URL}`);
 });
 

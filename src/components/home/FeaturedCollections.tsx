@@ -1,15 +1,50 @@
-
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const categories = [
-    { name: "Bed Linens", image: "/images/bed-linen.png", link: "/products?category=bed-sheets" },
-    { name: "Table Aesthetics", image: "/images/table-linen.png", link: "/products?category=table-linen" },
-    { name: "Luxury Cushions", image: "/images/cushion.png", link: "/products?category=cushion-covers" },
-];
+import { categoriesApi } from '../../lib/api';
 
 const FeaturedCollections = () => {
+    const [categories, setCategories] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            setLoading(true);
+            // Fetch only featured categories, excluding Apparels
+            const response = await categoriesApi.getAll({ featured: true });
+            if (response.data) {
+                // Filter out Apparels categories (Men, Women, Kids)
+                const featured = response.data.categories
+                    .filter((cat: any) => 
+                        !cat.slug?.startsWith('apparels-') && 
+                        cat.slug !== 'apparels' &&
+                        cat.is_featured &&
+                        cat.featured_order
+                    )
+                    .sort((a: any, b: any) => (a.featured_order || 0) - (b.featured_order || 0))
+                    .slice(0, 3); // Max 3 categories
+                
+                setCategories(featured.map((cat: any) => ({
+                    name: cat.name,
+                    image: cat.image_url || '/images/bed-linen.png',
+                    link: `/products?category=${cat.slug}`,
+                })));
+            }
+            setLoading(false);
+        };
+        fetchCategories();
+    }, []);
+
+    // Fallback categories if API fails or returns empty
+    const fallbackCategories = [
+        { name: "Bed Linens", image: "/images/bed-linen.png", link: "/products?category=bed-sheets" },
+        { name: "Table Aesthetics", image: "/images/table-linen.png", link: "/products?category=table-linen" },
+        { name: "Luxury Cushions", image: "/images/cushion.png", link: "/products?category=cushion-covers" },
+    ];
+
+    const displayCategories = categories.length > 0 ? categories : fallbackCategories;
+
     return (
         <section className="py-32 bg-white">
             <div className="container mx-auto px-6">
@@ -23,35 +58,41 @@ const FeaturedCollections = () => {
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {categories.map((cat, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1, duration: 0.6 }}
-                            className="group relative h-[600px] overflow-hidden cursor-pointer"
-                        >
-                            <Link to={cat.link}>
-                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors z-10 duration-500" />
-                                <img
-                                    src={cat.image}
-                                    alt={cat.name}
-                                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                                />
-                                <div className="absolute bottom-0 left-0 w-full p-10 z-20">
-                                    <div className="border-t border-white/30 pt-6 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                                        <h3 className="text-3xl font-serif text-white mb-2">{cat.name}</h3>
-                                        <div className="flex items-center gap-2 text-secondary opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-y-4 group-hover:translate-y-0 delay-100">
-                                            <span className="font-bold uppercase tracking-widest text-sm">Explore</span>
-                                            <ArrowUpRight className="w-4 h-4" />
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {displayCategories.map((cat, index) => (
+                            <motion.div
+                                key={cat.name}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1, duration: 0.6 }}
+                                className="group relative h-[600px] overflow-hidden cursor-pointer"
+                            >
+                                <Link to={cat.link}>
+                                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors z-10 duration-500" />
+                                    <img
+                                        src={cat.image}
+                                        alt={cat.name}
+                                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                                    />
+                                    <div className="absolute bottom-0 left-0 w-full p-10 z-20">
+                                        <div className="border-t border-white/30 pt-6 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                            <h3 className="text-3xl font-serif text-white mb-2">{cat.name}</h3>
+                                            <div className="flex items-center gap-2 text-secondary opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-y-4 group-hover:translate-y-0 delay-100">
+                                                <span className="font-bold uppercase tracking-widest text-sm">Explore</span>
+                                                <ArrowUpRight className="w-4 h-4" />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </Link>
-                        </motion.div>
-                    ))}
-                </div>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
             </div>
         </section>
     );

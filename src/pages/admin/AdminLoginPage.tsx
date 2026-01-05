@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { authApi } from '../../lib/api';
 
 const AdminLoginPage = () => {
     const navigate = useNavigate();
@@ -9,17 +10,31 @@ const AdminLoginPage = () => {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            const response = await authApi.login(email, password);
+            if (response.error) {
+                setError(response.error);
+            } else {
+                // Check user role and redirect accordingly
+                const userRole = response.data?.user?.role || 'user';
+                if (userRole === 'admin') {
+                    navigate('/admin');
+                } else {
+                    navigate('/profile');
+                }
+            }
+        } catch (err) {
+            setError('An error occurred. Please try again.');
+        } finally {
             setLoading(false);
-            // In a real app, perform validation and Auth token storage here
-            navigate('/admin');
-        }, 1500);
+        }
     };
 
     return (
@@ -45,6 +60,11 @@ const AdminLoginPage = () => {
                         <p className="text-gray-500 text-sm">Secure access for Textile Twist administrators</p>
                     </div>
 
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                            {error}
+                        </div>
+                    )}
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div>
                             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -53,7 +73,10 @@ const AdminLoginPage = () => {
                             <input
                                 type="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => {
+                                    setEmail(e.target.value);
+                                    setError(null);
+                                }}
                                 placeholder="admin@textiletwist.com"
                                 required
                                 className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-gray-300"
@@ -67,7 +90,10 @@ const AdminLoginPage = () => {
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={(e) => {
+                                    setPassword(e.target.value);
+                                    setError(null);
+                                }}
                                 placeholder="••••••••"
                                 required
                                 className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-gray-300"

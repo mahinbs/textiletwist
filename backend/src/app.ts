@@ -1,7 +1,16 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import { env } from './config/env.js';
 import authRoutes from './auth/routes.js';
+import productRoutes from './products/routes.js';
+import categoryRoutes from './categories/routes.js';
+import cartRoutes from './cart/routes.js';
+import wishlistRoutes from './wishlist/routes.js';
+import couponRoutes from './coupons/routes.js';
+import orderRoutes from './orders/routes.js';
+import enquiryRoutes from './enquiries/routes.js';
+import storageRoutes from './storage/routes.js';
 
 const app = express();
 
@@ -13,7 +22,7 @@ app.use(cookieParser());
 // CORS configuration - allow frontend origin with credentials
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: env.FRONTEND_URL,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -27,6 +36,14 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // API routes
 app.use('/auth', authRoutes);
+app.use('/products', productRoutes);
+app.use('/categories', categoryRoutes);
+app.use('/cart', cartRoutes);
+app.use('/wishlist', wishlistRoutes);
+app.use('/coupons', couponRoutes);
+app.use('/orders', orderRoutes);
+app.use('/enquiries', enquiryRoutes);
+app.use('/upload', storageRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

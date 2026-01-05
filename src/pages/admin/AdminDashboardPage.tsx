@@ -1,25 +1,45 @@
+import { useState, useEffect } from 'react';
 import DashboardStats from '../../components/admin/DashboardStats';
-import { Eye, ArrowRight } from 'lucide-react';
+import { Eye, ArrowRight, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ordersApi } from '../../lib/api';
 
 const AdminDashboardPage = () => {
     const navigate = useNavigate();
-    const recentOrders = [
-        { id: '#ORD-001', customer: 'Sarah Johnson', date: '2023-10-25', amount: '₹12,450', status: 'Pending' },
-        { id: '#ORD-002', customer: 'Michael Smith', date: '2023-10-24', amount: '₹8,900', status: 'Shipped' },
-        { id: '#ORD-003', customer: 'Emma Davis', date: '2023-10-24', amount: '₹3,200', status: 'Delivered' },
-        { id: '#ORD-004', customer: 'James Wilson', date: '2023-10-23', amount: '₹15,600', status: 'Processing' },
-        { id: '#ORD-005', customer: 'Olivia Brown', date: '2023-10-23', amount: '₹6,750', status: 'Delivered' },
-    ];
+    const [recentOrders, setRecentOrders] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchRecentOrders();
+    }, []);
+
+    const fetchRecentOrders = async () => {
+        setLoading(true);
+        const response = await ordersApi.getAll();
+        if (response.data) {
+            const orders = response.data.orders || [];
+            setRecentOrders(orders.slice(0, 5)); // Get 5 most recent
+        }
+        setLoading(false);
+    };
 
     const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'Pending': return 'bg-orange-100 text-orange-700';
-            case 'Shipped': return 'bg-blue-100 text-blue-700';
-            case 'Delivered': return 'bg-green-100 text-green-700';
-            case 'Processing': return 'bg-purple-100 text-purple-700';
+        const s = status.toLowerCase();
+        switch (s) {
+            case 'pending': return 'bg-orange-100 text-orange-700';
+            case 'shipped': return 'bg-blue-100 text-blue-700';
+            case 'delivered': return 'bg-green-100 text-green-700';
+            case 'processing': case 'confirmed': return 'bg-purple-100 text-purple-700';
             default: return 'bg-gray-100 text-gray-700';
         }
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
     };
 
     return (
@@ -38,44 +58,58 @@ const AdminDashboardPage = () => {
                         View All <ArrowRight size={16} />
                     </Link>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-50 text-gray-600 text-xs uppercase font-semibold">
-                            <tr>
-                                <th className="px-6 py-4">Order ID</th>
-                                <th className="px-6 py-4">Customer</th>
-                                <th className="px-6 py-4">Date</th>
-                                <th className="px-6 py-4">Amount</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {recentOrders.map((order) => (
-                                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 font-medium text-gray-800">{order.id}</td>
-                                    <td className="px-6 py-4 text-gray-600">{order.customer}</td>
-                                    <td className="px-6 py-4 text-gray-500">{order.date}</td>
-                                    <td className="px-6 py-4 text-gray-800 font-medium">{order.amount}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                                            {order.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => navigate('/admin/orders')}
-                                            className="text-gray-400 hover:text-primary transition-colors"
-                                            title="View Order Details"
-                                        >
-                                            <Eye size={20} />
-                                        </button>
-                                    </td>
+                {loading ? (
+                    <div className="p-8 text-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 text-gray-600 text-xs uppercase font-semibold">
+                                <tr>
+                                    <th className="px-6 py-4">Order ID</th>
+                                    <th className="px-6 py-4">Customer</th>
+                                    <th className="px-6 py-4">Date</th>
+                                    <th className="px-6 py-4">Amount</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4 text-right">Action</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {recentOrders.length > 0 ? (
+                                    recentOrders.map((order) => (
+                                        <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 font-medium text-gray-800">{order.order_number}</td>
+                                            <td className="px-6 py-4 text-gray-600">{order.customer_name}</td>
+                                            <td className="px-6 py-4 text-gray-500">{formatDate(order.created_at)}</td>
+                                            <td className="px-6 py-4 text-gray-800 font-medium">₹{Math.round(order.total_amount).toLocaleString()}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                                                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    onClick={() => navigate('/admin/orders')}
+                                                    className="text-gray-400 hover:text-primary transition-colors"
+                                                    title="View Order Details"
+                                                >
+                                                    <Eye size={20} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                            No orders yet
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

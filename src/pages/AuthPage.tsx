@@ -1,16 +1,58 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import { authApi } from '../lib/api';
 
 const AuthPage = () => {
     const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+
+        const formData = new FormData(e.currentTarget);
+        const email = formData.get('email') as string;
+        const password = formData.get('password') as string;
+        const fullName = formData.get('fullName') as string;
+
+        try {
+            if (isLogin) {
+                const response = await authApi.login(email, password);
+                if (response.error) {
+                    setError(response.error);
+                } else {
+                    // Check user role and redirect accordingly
+                    const userRole = response.data?.user?.role || 'user';
+                    if (userRole === 'admin') {
+                        navigate('/admin');
+                    } else {
+                        navigate('/profile');
+                    }
+                }
+            } else {
+                const response = await authApi.signup(email, password, fullName);
+                if (response.error) {
+                    setError(response.error);
+                } else {
+                    // New signups are always regular users
+                    navigate('/profile');
+                }
+            }
+        } catch (err) {
+            setError('An error occurred. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen pt-32 pb-20 px-4 md:px-8 bg-gray-50 flex items-center justify-center">
-            {/* ... background elements ... */}
             <div className="absolute inset-0 z-0 overflow-hidden">
                 <div className="absolute -top-[20%] -right-[10%] w-[70vw] h-[70vw] rounded-full bg-secondary/5 blur-3xl" />
                 <div className="absolute top-[40%] -left-[10%] w-[50vw] h-[50vw] rounded-full bg-primary/5 blur-3xl" />
@@ -25,14 +67,20 @@ const AuthPage = () => {
                 {/* Header / Tabs */}
                 <div className="flex border-b border-gray-100">
                     <button
-                        onClick={() => setIsLogin(true)}
+                        onClick={() => {
+                            setIsLogin(true);
+                            setError(null);
+                        }}
                         className={`flex-1 py-4 text-center text-sm font-semibold tracking-wide transition-colors duration-300 ${isLogin ? 'bg-primary text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                             }`}
                     >
                         LOGIN
                     </button>
                     <button
-                        onClick={() => setIsLogin(false)}
+                        onClick={() => {
+                            setIsLogin(false);
+                            setError(null);
+                        }}
                         className={`flex-1 py-4 text-center text-sm font-semibold tracking-wide transition-colors duration-300 ${!isLogin ? 'bg-primary text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                             }`}
                     >
@@ -53,16 +101,13 @@ const AuthPage = () => {
                         </p>
                     </div>
 
-                    <form className="space-y-5" onSubmit={(e) => {
-                        e.preventDefault();
-                        if (isLogin) {
-                            // Dummy login success
-                            navigate('/profile');
-                        } else {
-                            // Dummy signup success
-                            navigate('/profile');
-                        }
-                    }}>
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                            {error}
+                        </div>
+                    )}
+
+                    <form className="space-y-5" onSubmit={handleSubmit}>
                         <AnimatePresence initial={false}>
                             {!isLogin && (
                                 <motion.div
@@ -73,9 +118,10 @@ const AuthPage = () => {
                                 >
                                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Full Name</label>
                                     <input
+                                        name="fullName"
                                         type="text"
                                         placeholder="John Doe"
-                                        required
+                                        required={!isLogin}
                                         className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all"
                                     />
                                 </motion.div>
@@ -85,6 +131,7 @@ const AuthPage = () => {
                         <div>
                             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Email Address</label>
                             <input
+                                name="email"
                                 type="email"
                                 placeholder="name@example.com"
                                 required
@@ -95,9 +142,11 @@ const AuthPage = () => {
                         <div className="relative">
                             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Password</label>
                             <input
+                                name="password"
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder="••••••••"
                                 required
+                                minLength={6}
                                 className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all"
                             />
                             <button
@@ -117,9 +166,21 @@ const AuthPage = () => {
                             </div>
                         )}
 
-                        <button type="submit" className="w-full py-3 bg-secondary text-primary font-bold rounded-lg hover:bg-secondary/90 transition-all duration-300 flex items-center justify-center gap-2 mt-4">
-                            {isLogin ? 'Sign In' : 'Create Account'}
-                            <ArrowRight size={20} />
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-3 bg-secondary text-primary font-bold rounded-lg hover:bg-secondary/90 transition-all duration-300 flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" /> Processing...
+                                </>
+                            ) : (
+                                <>
+                                    {isLogin ? 'Sign In' : 'Create Account'}
+                                    <ArrowRight size={20} />
+                                </>
+                            )}
                         </button>
                     </form>
 

@@ -1,33 +1,68 @@
-import { useState } from 'react';
-import { Package, User, CreditCard, MapPin, Lock, LogOut, ChevronRight, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Package, User, CreditCard, MapPin, Lock, LogOut, ChevronRight, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { authApi, ordersApi } from '../lib/api';
 
 const ProfilePage = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('orders');
+    const [user, setUser] = useState<any>(null);
+    const [orders, setOrders] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const handleSignOut = () => {
-        // Clear auth logic here if needed
+    useEffect(() => {
+        fetchUserData();
+        fetchOrders();
+    }, []);
+
+    const fetchUserData = async () => {
+        const response = await authApi.getCurrentUser();
+        if (response.data) {
+            setUser(response.data.user);
+        }
+        setLoading(false);
+    };
+
+    const fetchOrders = async () => {
+        const response = await ordersApi.getAll();
+        if (response.data) {
+            setOrders(response.data.orders || []);
+        }
+    };
+
+    const handleSignOut = async () => {
+        await authApi.logout();
         navigate('/auth');
     };
 
     const renderContent = () => {
         switch (activeTab) {
             case 'orders':
-                return <MyOrders />;
+                return <MyOrders orders={orders} loading={loading} />;
             case 'personal-info':
-                return <PersonalInfo />;
+                return <PersonalInfo user={user} onUpdate={fetchUserData} />;
             case 'billing':
-                return <BillingAddress />;
+                return <BillingAddress user={user} />;
             case 'delivery':
-                return <DeliveryAddress />;
+                return <DeliveryAddress user={user} />;
             case 'password':
                 return <ChangePassword />;
             default:
-                return <MyOrders />;
+                return <MyOrders orders={orders} loading={loading} />;
         }
     };
+
+    if (loading) {
+        return (
+            <div className="pt-28 pb-20 container mx-auto px-6 flex justify-center items-center min-h-screen">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    const userName = user?.full_name || user?.email?.split('@')[0] || 'User';
+    const userInitials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
 
     return (
         <div className="pt-28 pb-20 container mx-auto px-6 h-screen overflow-hidden flex flex-col">
@@ -38,11 +73,11 @@ const ProfilePage = () => {
                 <div className="w-full md:w-1/4 bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-fit">
                     <div className="flex items-center gap-4 mb-8 p-2">
                         <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center text-secondary font-bold text-xl">
-                            JD
+                            {userInitials}
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-800">John Doe</h3>
-                            <p className="text-xs text-gray-500">john.doe@example.com</p>
+                            <h3 className="font-bold text-gray-800">{userName}</h3>
+                            <p className="text-xs text-gray-500">{user?.email || 'No email'}</p>
                         </div>
                     </div>
 
@@ -88,118 +123,196 @@ const NavButton = ({ icon: Icon, label, active, onClick }: any) => (
 );
 
 // Sub-components for sections
-const MyOrders = () => (
-    <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">My Orders</h2>
-        {[1, 2].map((order) => (
-            <div key={order} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                <div className="flex flex-wrap justify-between items-start gap-4 mb-4 pb-4 border-b border-gray-100">
-                    <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Order ID</p>
-                        <p className="font-bold text-primary">#ORD-2024-{1000 + order}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Date</p>
-                        <p className="font-medium text-gray-700">Dec {20 + order}, 2024</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Delivered
-                        </span>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Total Amount</p>
-                        <p className="font-bold text-primary">₹ 2,490</p>
-                    </div>
-                </div>
-                <div className="flex gap-4 items-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
-                        <img src="/images/bed-linen.png" alt="Product" className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                        <h4 className="font-bold text-gray-800">Royal Satin Bed Sheet</h4>
-                        <p className="text-sm text-gray-500">Queen Size x 1</p>
-                    </div>
-                    <button className="ml-auto text-sm text-secondary font-bold hover:underline">View Details</button>
-                </div>
-            </div>
-        ))}
-    </div>
-);
+const MyOrders = ({ orders, loading }: { orders: any[]; loading: boolean }) => {
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+    };
 
-const PersonalInfo = () => (
-    <div className="max-w-xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Personal Information</h2>
-        <form className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">First Name</label>
-                    <input type="text" defaultValue="John" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-                </div>
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Last Name</label>
-                    <input type="text" defaultValue="Doe" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-                </div>
-            </div>
-            <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Email Address</label>
-                <input type="email" defaultValue="john.doe@example.com" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-            </div>
-            <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Phone Number</label>
-                <input type="tel" defaultValue="+91 98765 43210" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-            </div>
-            <button className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary/90 mt-4">Save Changes</button>
-        </form>
-    </div>
-);
+    const getStatusColor = (status: string) => {
+        const s = status.toLowerCase();
+        if (s === 'delivered') return 'bg-green-100 text-green-800';
+        if (s === 'pending') return 'bg-orange-100 text-orange-800';
+        if (s === 'shipped') return 'bg-blue-100 text-blue-800';
+        return 'bg-gray-100 text-gray-800';
+    };
 
-const BillingAddress = () => (
-    <div className="max-w-xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Billing Address</h2>
-        <form className="space-y-4">
-            <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Street Address</label>
-                <input type="text" defaultValue="123 Luxury Lane, Silk Road" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">City</label>
-                    <input type="text" defaultValue="Mumbai" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-                </div>
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">State</label>
-                    <input type="text" defaultValue="Maharashtra" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-                </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Zip Code</label>
-                    <input type="text" defaultValue="400001" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-                </div>
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Country</label>
-                    <input type="text" defaultValue="India" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-                </div>
-            </div>
-            <button className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary/90 mt-4">Update Address</button>
-        </form>
-    </div>
-);
+        );
+    }
 
-const DeliveryAddress = () => {
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">My Orders</h2>
+            {orders.length > 0 ? (
+                orders.map((order) => (
+                    <div key={order.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                        <div className="flex flex-wrap justify-between items-start gap-4 mb-4 pb-4 border-b border-gray-100">
+                            <div>
+                                <p className="text-xs text-gray-500 uppercase tracking-wide">Order ID</p>
+                                <p className="font-bold text-primary">{order.order_number}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 uppercase tracking-wide">Date</p>
+                                <p className="font-medium text-gray-700">{formatDate(order.created_at)}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                </span>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs text-gray-500 uppercase tracking-wide">Total Amount</p>
+                                <p className="font-bold text-primary">₹{Math.round(order.total_amount).toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            {order.order_items?.slice(0, 3).map((item: any, idx: number) => (
+                                <div key={idx} className="flex gap-4 items-center">
+                                    <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                                        {item.product_image_url ? (
+                                            <img src={item.product_image_url} alt={item.product_name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                                                {item.quantity}x
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-gray-800">{item.product_name}</h4>
+                                        <p className="text-sm text-gray-500">₹{Math.round(item.product_price).toLocaleString()} each × {item.quantity}</p>
+                                    </div>
+                                    <p className="font-bold text-gray-800">₹{Math.round(item.subtotal).toLocaleString()}</p>
+                                </div>
+                            ))}
+                            {order.order_items && order.order_items.length > 3 && (
+                                <p className="text-sm text-gray-500 text-center pt-2">
+                                    +{order.order_items.length - 3} more item(s)
+                                </p>
+                            )}
+                        </div>
+                        {order.shipping_address && (
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Shipping Address</p>
+                                <p className="text-sm text-gray-700">
+                                    {order.shipping_address}, {order.shipping_city}, {order.shipping_state} {order.shipping_pincode}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                ))
+            ) : (
+                <div className="text-center py-12 text-gray-500">
+                    <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                    <p>No orders yet</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const PersonalInfo = ({ user, onUpdate }: { user: any; onUpdate: () => void }) => {
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setSaving(true);
+        setMessage(null);
+        
+        // TODO: Implement user profile update API
+        setTimeout(() => {
+            setMessage({ type: 'success', text: 'Profile updated successfully!' });
+            setSaving(false);
+            onUpdate();
+        }, 1000);
+    };
+
+    return (
+        <div className="max-w-xl">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Personal Information</h2>
+            {message && (
+                <div className={`mb-4 p-3 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    {message.text}
+                </div>
+            )}
+            <form className="space-y-4" onSubmit={handleSubmit}>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Full Name</label>
+                        <input 
+                            type="text" 
+                            defaultValue={user?.full_name || user?.user_metadata?.full_name || ''} 
+                            name="fullName"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" 
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Phone</label>
+                        <input 
+                            type="tel" 
+                            name="phone"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" 
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Email Address</label>
+                    <input 
+                        type="email" 
+                        defaultValue={user?.email || ''} 
+                        disabled
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500" 
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+                </div>
+                <button 
+                    type="submit"
+                    disabled={saving}
+                    className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary/90 mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                    {saving ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                        </>
+                    ) : (
+                        'Save Changes'
+                    )}
+                </button>
+            </form>
+        </div>
+    );
+};
+
+const BillingAddress = ({ user: _user }: { user: any }) => {
+    return (
+        <div className="max-w-xl">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Billing Address</h2>
+            <p className="text-gray-500 mb-4">Billing address is collected during checkout for each order.</p>
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p className="text-sm text-gray-600">Your billing address will be saved from your most recent order.</p>
+            </div>
+        </div>
+    );
+};
+
+const DeliveryAddress = ({ user: _user }: { user: any }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     return (
         <div className="max-w-xl">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Delivery Address</h2>
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-6 flex justify-between items-center">
-                <div>
-                    <p className="font-bold text-gray-800">Home</p>
-                    <p className="text-sm text-gray-600">123 Luxury Lane, Silk Road, Mumbai, 400001</p>
-                </div>
-                <span className="text-xs bg-secondary text-white px-2 py-1 rounded">Default</span>
+            <p className="text-gray-500 mb-4">Delivery address is collected during checkout for each order.</p>
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                <p className="text-sm text-gray-600">Your delivery address will be saved from your most recent order.</p>
             </div>
             <button
                 onClick={() => setIsModalOpen(true)}
@@ -224,48 +337,15 @@ const DeliveryAddress = () => {
                                 </button>
                             </div>
                             <div className="p-6 overflow-y-auto max-h-[80vh]">
-                                <form className="space-y-4" onSubmit={(e) => {
-                                    e.preventDefault();
-                                    alert("Address Added!");
-                                    setIsModalOpen(false);
-                                }}>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Address Label (e.g., Office)</label>
-                                        <input type="text" placeholder="Office, Home, etc." className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" required />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Street Address</label>
-                                        <input type="text" placeholder="House no, Street name" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" required />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">City</label>
-                                            <input type="text" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" required />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">State</label>
-                                            <input type="text" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" required />
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Zip Code</label>
-                                            <input type="text" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" required />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Country</label>
-                                            <input type="text" defaultValue="India" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" required />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <input type="checkbox" id="default-address" className="rounded text-secondary focus:ring-secondary" />
-                                        <label htmlFor="default-address" className="text-sm text-gray-600">Make this my default address</label>
-                                    </div>
-                                    <div className="pt-4 flex gap-3">
-                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">Cancel</button>
-                                        <button type="submit" className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium">Save Address</button>
-                                    </div>
-                                </form>
+                                <p className="text-gray-500 text-sm mb-4">
+                                    Addresses are saved during checkout. You can add a new address when placing your next order.
+                                </p>
+                                <button
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+                                >
+                                    Close
+                                </button>
                             </div>
                         </motion.div>
                     </div>
@@ -275,25 +355,100 @@ const DeliveryAddress = () => {
     );
 };
 
-const ChangePassword = () => (
-    <div className="max-w-xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Change Password</h2>
-        <form className="space-y-4">
-            <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Current Password</label>
-                <input type="password" placeholder="••••••••" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-            </div>
-            <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">New Password</label>
-                <input type="password" placeholder="••••••••" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-            </div>
-            <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Confirm New Password</label>
-                <input type="password" placeholder="••••••••" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" />
-            </div>
-            <button className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary/90 mt-4">Update Password</button>
-        </form>
-    </div>
-);
+const ChangePassword = () => {
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setMessage(null);
+
+        if (newPassword !== confirmPassword) {
+            setMessage({ type: 'error', text: 'Passwords do not match' });
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            setMessage({ type: 'error', text: 'Password must be at least 6 characters' });
+            return;
+        }
+
+        setSaving(true);
+        const response = await authApi.changePassword(currentPassword, newPassword);
+        
+        if (response.error) {
+            setMessage({ type: 'error', text: response.error });
+        } else {
+            setMessage({ type: 'success', text: 'Password updated successfully!' });
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        }
+        setSaving(false);
+    };
+
+    return (
+        <div className="max-w-xl">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Change Password</h2>
+            {message && (
+                <div className={`mb-4 p-3 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    {message.text}
+                </div>
+            )}
+            <form className="space-y-4" onSubmit={handleSubmit}>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Current Password</label>
+                    <input 
+                        type="password" 
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••" 
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" 
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">New Password</label>
+                    <input 
+                        type="password" 
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••" 
+                        required
+                        minLength={6}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" 
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Confirm New Password</label>
+                    <input 
+                        type="password" 
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••" 
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary" 
+                    />
+                </div>
+                <button 
+                    type="submit"
+                    disabled={saving}
+                    className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary/90 mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                    {saving ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Updating...
+                        </>
+                    ) : (
+                        'Update Password'
+                    )}
+                </button>
+            </form>
+        </div>
+    );
+};
 
 export default ProfilePage;

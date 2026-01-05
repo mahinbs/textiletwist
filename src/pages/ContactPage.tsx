@@ -1,6 +1,36 @@
-import { Mail, MapPin, Phone, Send } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, MapPin, Phone, Send, Loader2 } from 'lucide-react';
+import { enquiriesApi } from '../lib/api';
 
 const ContactPage = () => {
+    const [submitting, setSubmitting] = useState(false);
+    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setMessage(null);
+
+        const formData = new FormData(e.currentTarget);
+        const enquiry = {
+            name: formData.get('name') as string,
+            email: formData.get('email') as string,
+            subject: formData.get('subject') as string,
+            message: formData.get('message') as string,
+        };
+
+        const response = await enquiriesApi.create(enquiry);
+        
+        if (response.error) {
+            setMessage({ type: 'error', text: response.error });
+        } else {
+            setMessage({ type: 'success', text: 'Message sent successfully! We will get back to you soon.' });
+            e.currentTarget.reset();
+        }
+        
+        setSubmitting(false);
+    };
+
     return (
         <div className="pt-24 pb-20 container mx-auto px-6">
             <div className="text-center mb-16">
@@ -43,45 +73,68 @@ const ContactPage = () => {
                 {/* Contact Form */}
                 <div className="bg-white p-10 rounded-lg shadow-lg border border-gray-100">
                     <h2 className="text-2xl font-serif font-bold text-primary mb-6">Send a Message</h2>
-                    <form className="space-y-6" onSubmit={(e) => {
-                        e.preventDefault();
-                        const formData = new FormData(e.currentTarget);
-                        const newEnquiry = {
-                            id: Date.now().toString(),
-                            name: formData.get('name') as string,
-                            email: formData.get('email') as string,
-                            subject: formData.get('subject') as string,
-                            message: formData.get('message') as string,
-                            date: new Date().toISOString(),
-                            status: 'new'
-                        };
-
-                        const existingEnquiries = JSON.parse(localStorage.getItem('contact_enquiries') || '[]');
-                        localStorage.setItem('contact_enquiries', JSON.stringify([newEnquiry, ...existingEnquiries]));
-
-                        alert("Message sent successfully! We will get back to you soon.");
-                        e.currentTarget.reset();
-                    }}>
+                    {message && (
+                        <div className={`mb-4 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                            {message.text}
+                        </div>
+                    )}
+                    <form className="space-y-6" onSubmit={handleSubmit}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                                <input name="name" required type="text" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="John Doe" />
+                                <input
+                                    name="name"
+                                    required
+                                    type="text"
+                                    className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+                                    placeholder="John Doe"
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                <input name="email" required type="email" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="john@example.com" />
+                                <input
+                                    name="email"
+                                    required
+                                    type="email"
+                                    className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+                                    placeholder="john@example.com"
+                                />
                             </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                            <input name="subject" required type="text" className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="Inquiry about bulk orders" />
+                            <input
+                                name="subject"
+                                required
+                                type="text"
+                                className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+                                placeholder="Inquiry about bulk orders"
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                            <textarea name="message" required rows={4} className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" placeholder="Tell us more about your requirements..."></textarea>
+                            <textarea
+                                name="message"
+                                required
+                                rows={4}
+                                className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+                                placeholder="Tell us more about your requirements..."
+                            ></textarea>
                         </div>
-                        <button type="submit" className="w-full bg-primary text-secondary font-bold py-4 rounded-md hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2">
-                            Send Message <Send className="w-5 h-5" />
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="w-full bg-primary text-secondary font-bold py-4 rounded-md hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {submitting ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" /> Sending...
+                                </>
+                            ) : (
+                                <>
+                                    Send Message <Send className="w-5 h-5" />
+                                </>
+                            )}
                         </button>
                     </form>
                 </div>
