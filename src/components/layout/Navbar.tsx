@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, ShoppingBag, Heart, User, Plus, Minus, ChevronDown } from 'lucide-react';
+import { Menu, X, ShoppingBag, Heart, User, Plus, } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 
