@@ -11,6 +11,8 @@ import couponRoutes from './coupons/routes.js';
 import orderRoutes from './orders/routes.js';
 import enquiryRoutes from './enquiries/routes.js';
 import storageRoutes from './storage/routes.js';
+import notificationRoutes from './notifications/routes.js';
+import reviewRoutes from './reviews/routes.js';
 
 const app = express();
 
@@ -44,6 +46,8 @@ app.use('/coupons', couponRoutes);
 app.use('/orders', orderRoutes);
 app.use('/enquiries', enquiryRoutes);
 app.use('/upload', storageRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/reviews', reviewRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

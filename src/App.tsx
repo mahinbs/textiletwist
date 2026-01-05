@@ -18,6 +18,7 @@ import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
 import AdminEnquiriesPage from './pages/admin/AdminEnquiriesPage';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
+import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
 
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 
@@ -50,6 +51,7 @@ function App() {
                     <Route path="categories" element={<AdminCategoriesPage />} />
                     <Route path="orders" element={<AdminOrdersPage />} />
                     <Route path="customers" element={<AdminCustomersPage />} />
+                    <Route path="notifications" element={<AdminNotificationsPage />} />
                     <Route path="settings" element={<AdminSettingsPage />} />
                 </Route>
             </Routes>

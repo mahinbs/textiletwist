@@ -355,3 +355,55 @@ export const uploadApi = {
   },
 };
 
+// Notifications API
+export const notificationsApi = {
+  getAll: async (filters?: { limit?: number; unread_only?: boolean }) => {
+    const params = new URLSearchParams();
+    if (filters?.limit) params.append('limit', String(filters.limit));
+    if (filters?.unread_only) params.append('unread_only', 'true');
+    return apiRequest<{ notifications: any[] }>(`/notifications?${params.toString()}`);
+  },
+
+  getUnreadCount: async () => {
+    return apiRequest<{ count: number }>('/notifications/unread-count');
+  },
+
+  markAsRead: async (id: string) => {
+    return apiRequest<{ notification: any }>(`/notifications/${id}/read`, {
+      method: 'PUT',
+    });
+  },
+
+  markAllAsRead: async () => {
+    return apiRequest<{ message: string }>('/notifications/read-all', {
+      method: 'PUT',
+    });
+  },
+
+  delete: async (id: string) => {
+    return apiRequest(`/notifications/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Reviews API
+export const reviewsApi = {
+  getByProduct: async (productId: string) => {
+    return apiRequest<{ reviews: any[]; totalReviews: number; averageRating: number }>(`/reviews/product/${productId}`);
+  },
+
+  create: async (productId: string, rating: number, comment?: string) => {
+    return apiRequest<{ review: any; message: string }>('/reviews', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: productId, rating, comment }),
+    });
+  },
+
+  delete: async (id: string) => {
+    return apiRequest(`/reviews/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+

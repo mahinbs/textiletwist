@@ -311,22 +311,49 @@ router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void
       });
     }
 
-    // Update product quantities
+    // Update product quantities and check for low stock
+    const { createAdminNotification, checkLowStock } = await import('../notifications/utils.js');
+    
     for (const item of orderItems) {
-      // Get current quantity
+      // Get current product
       const { data: product } = await supabaseAdmin!
         .from('products')
-        .select('quantity')
+        .select('quantity, name')
         .eq('id', item.product_id)
         .single();
 
       if (product) {
-        const newQuantity = product.quantity - item.quantity;
+        const newQuantity = Math.max(0, product.quantity - item.quantity);
+        
+        // Update quantity
         await supabaseAdmin!
           .from('products')
           .update({ quantity: newQuantity })
           .eq('id', item.product_id);
+
+        // Check for low stock and create notifications
+        await checkLowStock(item.product_id, product.name, newQuantity);
       }
+    }
+
+    // Create order notification for admin
+    await createAdminNotification(
+      'order',
+      `New Order #${orderNumber}`,
+      `New order received from ${customer_name}`,
+      { order_id: order.id, order_number: orderNumber }
+    );
+
+    // Create order notification for customer (if logged in)
+    if (req.user) {
+      const { createNotification } = await import('../notifications/utils.js');
+      await createNotification({
+        user_id: req.user.id,
+        type: 'order',
+        title: `Order #${orderNumber} Placed`,
+        message: `Your order has been placed successfully. Total: ₹${totalAmount.toLocaleString()}`,
+        data: { order_id: order.id, order_number: orderNumber },
+      });
     }
 
     // Clear user's cart if authenticated
@@ -367,6 +394,17 @@ router.put('/:id/status', requireAuth, async (req: Request, res: Response): Prom
       return;
     }
 
+    // Get order with user_id before updating
+    const { data: existingOrder } = await supabaseAdmin!
+      .from('orders')
+      .select('user_id, order_number, customer_name')
+      .eq('id', id)
+      .single();
+
+    if (!existingOrder) {
+      res.status(404).json({ error: 'Order not found' }); return;
+    }
+
     const { data, error } = await supabaseAdmin!
       .from('orders')
       .update({ status })
@@ -386,7 +424,27 @@ router.put('/:id/status', requireAuth, async (req: Request, res: Response): Prom
       res.status(404).json({ error: 'Order not found' }); return;
     }
 
-    res.status(200).json({ order: data, message: 'Order status updated' });
+    // Create notification for customer when order status changes
+    if (existingOrder.user_id) {
+      const { createNotification } = await import('../notifications/utils.js');
+      const statusMessages: Record<string, string> = {
+        processing: 'Your order is being processed',
+        confirmed: 'Your order has been confirmed',
+        shipped: 'Your order has been shipped',
+        delivered: 'Your order has been delivered',
+        cancelled: 'Your order has been cancelled',
+      };
+
+      await createNotification({
+        user_id: existingOrder.user_id,
+        type: 'order_status',
+        title: `Order #${existingOrder.order_number} ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+        message: statusMessages[status] || `Your order status has been updated to ${status}`,
+        data: { order_id: id, order_number: existingOrder.order_number, status },
+      });
+    }
+
+    res.status(200).json({ order: data, message: 'Order status updated successfully' });
   } catch (error) {
     console.error('Update order status error:', error);
     res.status(500).json({ error: 'Failed to update order status' });
