@@ -94,12 +94,6 @@ const AdminProductsPage = () => {
                 images: product.images || [],
                 description: product.description || '',
                 is_active: product.is_active,
-                material: product.material || '',
-                thread_count: product.thread_count || '',
-                care_instructions: product.care_instructions || '',
-                origin: product.origin || '',
-                shipping_info: product.shipping_info || '',
-                return_policy: product.return_policy || '',
             });
             setImageFiles([]);
             setImagePreviews(product.images && product.images.length > 0 ? product.images : (product.image_url ? [product.image_url] : []));
@@ -116,12 +110,6 @@ const AdminProductsPage = () => {
                 images: [],
                 description: '',
                 is_active: true,
-                material: '',
-                thread_count: '',
-                care_instructions: '',
-                origin: '',
-                shipping_info: '',
-                return_policy: '',
             });
             setImageFiles([]);
             setImagePreviews([]);
@@ -770,75 +758,6 @@ const AdminProductsPage = () => {
                             <p className="mt-1 text-sm text-red-600">{imageError}</p>
                         )}
                         <p className="mt-1 text-xs text-gray-500">First image will be used as the primary product image.</p>
-                    </div>
-                    
-                    {/* Product Details Section */}
-                    <div className="border-t border-gray-200 pt-4 mt-4">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">Product Details</h3>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Material</label>
-                                    <input
-                                        type="text"
-                                        value={formData.material || ''}
-                                        onChange={(e) => setFormData({ ...formData, material: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                        placeholder="e.g., 100% Premium Cotton"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Thread Count</label>
-                                    <input
-                                        type="text"
-                                        value={formData.thread_count || ''}
-                                        onChange={(e) => setFormData({ ...formData, thread_count: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                        placeholder="e.g., 400 TC Satin Weave"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Care Instructions</label>
-                                <input
-                                    type="text"
-                                    value={formData.care_instructions || ''}
-                                    onChange={(e) => setFormData({ ...formData, care_instructions: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                    placeholder="e.g., Machine wash cold, tumble dry low"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
-                                <input
-                                    type="text"
-                                    value={formData.origin || ''}
-                                    onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                    placeholder="e.g., Handcrafted in India"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Information</label>
-                                <input
-                                    type="text"
-                                    value={formData.shipping_info || ''}
-                                    onChange={(e) => setFormData({ ...formData, shipping_info: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                    placeholder="e.g., Free Shipping over ₹999"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Return Policy</label>
-                                <input
-                                    type="text"
-                                    value={formData.return_policy || ''}
-                                    onChange={(e) => setFormData({ ...formData, return_policy: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                    placeholder="e.g., 30-Day Return Policy"
-                                />
-                            </div>
-                        </div>
                     </div>
 
                     {/* Product Details Management */}
