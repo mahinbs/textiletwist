@@ -11,24 +11,29 @@ const ContactPage = () => {
         setSubmitting(true);
         setMessage(null);
 
-        const formData = new FormData(e.currentTarget);
-        const enquiry = {
-            name: formData.get('name') as string,
-            email: formData.get('email') as string,
-            subject: formData.get('subject') as string,
-            message: formData.get('message') as string,
-        };
+        try {
+            const formData = new FormData(e.currentTarget);
+            const enquiry = {
+                name: formData.get('name') as string,
+                email: formData.get('email') as string,
+                subject: formData.get('subject') as string,
+                message: formData.get('message') as string,
+            };
 
-        const response = await enquiriesApi.create(enquiry);
-        
-        if (response.error) {
-            setMessage({ type: 'error', text: response.error });
-        } else {
-            setMessage({ type: 'success', text: 'Message sent successfully! We will get back to you soon.' });
-            e.currentTarget.reset();
+            const response = await enquiriesApi.create(enquiry);
+            
+            if (response.error) {
+                setMessage({ type: 'error', text: response.error });
+            } else {
+                setMessage({ type: 'success', text: 'Message sent successfully! We will get back to you soon.' });
+                // Reset form after successful submission
+                e.currentTarget.reset();
+            }
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed to send message. Please try again.' });
+        } finally {
+            setSubmitting(false);
         }
-        
-        setSubmitting(false);
     };
 
     return (

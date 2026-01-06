@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Plus, Minus, ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { cartApi, ordersApi } from '../lib/api';
+import CheckoutForm, { type CheckoutFormData } from '../components/checkout/CheckoutForm';
 
 const CartPage = () => {
     const navigate = useNavigate();
@@ -10,6 +11,7 @@ const CartPage = () => {
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState<string | null>(null);
     const [checkingOut, setCheckingOut] = useState(false);
+    const [showCheckoutForm, setShowCheckoutForm] = useState(false);
 
     useEffect(() => {
         fetchCart();
@@ -46,21 +48,12 @@ const CartPage = () => {
         setUpdating(null);
     };
 
-    const handleCheckout = async () => {
+    const handleCheckout = () => {
         if (cartItems.length === 0) return;
+        setShowCheckoutForm(true);
+    };
 
-        // For now, redirect to a checkout page or show form
-        // In a real app, you'd collect shipping info first
-        const customerName = prompt('Enter your name:');
-        const customerEmail = prompt('Enter your email:');
-        const customerPhone = prompt('Enter your phone:');
-        const shippingAddress = prompt('Enter shipping address:');
-
-        if (!customerName || !customerEmail || !customerPhone || !shippingAddress) {
-            alert('All fields are required');
-            return;
-        }
-
+    const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
         setCheckingOut(true);
 
         // Prepare order data
@@ -68,23 +61,22 @@ const CartPage = () => {
             cart_items: cartItems.map(item => ({
                 product_id: item.product_id,
                 quantity: item.quantity,
+                size: item.size || null,
                 product: item.product,
             })),
-            customer_name: customerName,
-            customer_email: customerEmail,
-            customer_phone: customerPhone,
-            shipping_address: shippingAddress,
+            ...formData,
             shipping_cost: subtotal > 5000 ? 0 : 500,
         };
 
         const response = await ordersApi.create(orderData);
         if (response.error) {
             alert(response.error);
+            setCheckingOut(false);
         } else {
+            setShowCheckoutForm(false);
             alert('Order placed successfully!');
             navigate('/profile');
         }
-        setCheckingOut(false);
     };
 
     if (loading) {
@@ -241,7 +233,25 @@ const CartPage = () => {
                             <p className="text-center text-xs text-gray-400">Secure Encrypted Checkout</p>
                         </motion.div>
                     </div>
-                ) : (
+                ) : null}
+
+                {showCheckoutForm && (
+                    <CheckoutForm
+                        cartItems={cartItems}
+                        subtotal={subtotal}
+                        shipping={shipping}
+                        tax={tax}
+                        total={total}
+                        onCheckout={handleCheckoutSubmit}
+                        onCancel={() => {
+                            setShowCheckoutForm(false);
+                            setCheckingOut(false);
+                        }}
+                        isSubmitting={checkingOut}
+                    />
+                )}
+
+                {!loading && cartItems.length === 0 && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}

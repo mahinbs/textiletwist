@@ -32,3 +32,4 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_role ON user_profiles(role);
 -- Alternative: Create user via Supabase Auth Admin API (can be done via backend)
 -- See create-admin-user.js for Node.js script
 
+

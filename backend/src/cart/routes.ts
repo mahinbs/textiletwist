@@ -49,7 +49,7 @@ router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const { product_id, quantity } = req.body;
+    const { product_id, quantity, size } = req.body;
 
     if (!product_id) {
       res.status(400).json({ error: 'Product ID is required' });
@@ -65,7 +65,7 @@ router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void
     // Check if product exists and is active
     const { data: product, error: productError } = await supabaseAdmin!
       .from('products')
-      .select('id, quantity, is_active')
+      .select('id, quantity, is_active, sizes_enabled')
       .eq('id', product_id)
       .single();
 
@@ -79,25 +79,69 @@ router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void
       return;
     }
 
-    if (product.quantity < qty) {
-      res.status(400).json({ error: 'Insufficient stock' });
-      return;
+    // Validate size if sizes are enabled
+    if ((product as any).sizes_enabled) {
+      if (!size) {
+        res.status(400).json({ error: 'Size is required for this product' });
+        return;
+      }
+      
+      // Check size stock
+      const { data: sizeData } = await supabaseAdmin!
+        .from('product_sizes')
+        .select('quantity')
+        .eq('product_id', product_id)
+        .eq('size_name', size)
+        .single();
+      
+      if (!sizeData || sizeData.quantity < qty) {
+        res.status(400).json({ error: 'Insufficient stock for selected size' });
+        return;
+      }
+    } else {
+      if (product.quantity < qty) {
+        res.status(400).json({ error: 'Insufficient stock' });
+        return;
+      }
     }
 
-    // Check if item already in cart
-    const { data: existingItem } = await supabaseAdmin!
+    // Check if item already in cart (with same size)
+    const existingItemQuery = supabaseAdmin!
       .from('cart')
       .select('id, quantity')
       .eq('user_id', req.user.id)
-      .eq('product_id', product_id)
-      .single();
+      .eq('product_id', product_id);
+    
+    if (size) {
+      existingItemQuery.eq('size', size);
+    } else {
+      existingItemQuery.is('size', null);
+    }
+    
+    const { data: existingItem } = await existingItemQuery.single();
 
     if (existingItem) {
       // Update quantity
       const newQuantity = existingItem.quantity + qty;
-      if (product.quantity < newQuantity) {
-        res.status(400).json({ error: 'Insufficient stock' });
-        return;
+      
+      // Check stock based on sizes
+      if ((product as any).sizes_enabled && size) {
+        const { data: sizeData } = await supabaseAdmin!
+          .from('product_sizes')
+          .select('quantity')
+          .eq('product_id', product_id)
+          .eq('size_name', size)
+          .single();
+        
+        if (!sizeData || sizeData.quantity < newQuantity) {
+          res.status(400).json({ error: 'Insufficient stock for selected size' });
+          return;
+        }
+      } else {
+        if (product.quantity < newQuantity) {
+          res.status(400).json({ error: 'Insufficient stock' });
+          return;
+        }
       }
 
       const { data, error } = await supabaseAdmin!
@@ -126,6 +170,7 @@ router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void
         user_id: req.user.id,
         product_id,
         quantity: qty,
+        size: size || null,
       })
       .select(`
         *,

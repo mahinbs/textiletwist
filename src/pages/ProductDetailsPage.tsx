@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Star, ShoppingCart, Truck, Shield, Loader2, Heart, MessageSquare } from 'lucide-react';
-import { productsApi, cartApi, wishlistApi, reviewsApi, authApi } from '../lib/api';
+import { productsApi, cartApi, wishlistApi, reviewsApi, authApi, productSizesApi, productDetailsApi } from '../lib/api';
 
 const ProductDetailsPage = () => {
     const { id } = useParams();
@@ -10,7 +10,11 @@ const ProductDetailsPage = () => {
     const [loading, setLoading] = useState(true);
     const [addingToCart, setAddingToCart] = useState(false);
     const [inWishlist, setInWishlist] = useState(false);
-    const [selectedSize, setSelectedSize] = useState("Queen");
+    const [selectedSize, setSelectedSize] = useState<string | null>(null);
+    const [productSizes, setProductSizes] = useState<any[]>([]);
+    const [loadingSizes, setLoadingSizes] = useState(false);
+    const [productDetails, setProductDetails] = useState<any[]>([]);
+    const [loadingDetails, setLoadingDetails] = useState(false);
     const [reviews, setReviews] = useState<any[]>([]);
     const [totalReviews, setTotalReviews] = useState(0);
     const [averageRating, setAverageRating] = useState(0);
@@ -28,7 +32,36 @@ const ProductDetailsPage = () => {
             setLoading(true);
             const response = await productsApi.getById(id);
             if (response.data) {
-                setProduct(response.data.product);
+                const productData = response.data.product;
+                setProduct(productData);
+                
+                // Fetch product sizes if sizes are enabled
+                if (productData.sizes_enabled) {
+                    setLoadingSizes(true);
+                    const sizesResponse = await productSizesApi.getByProduct(id);
+                    if (sizesResponse.data) {
+                        setProductSizes(sizesResponse.data.sizes || []);
+                        // Set first available size as selected
+                        const availableSizes = sizesResponse.data.sizes.filter((s: any) => s.quantity > 0);
+                        if (availableSizes.length > 0) {
+                            setSelectedSize(availableSizes[0].size_name);
+                        }
+                    }
+                    setLoadingSizes(false);
+                } else {
+                    setProductSizes([]);
+                    setSelectedSize(null);
+                }
+                
+                // Fetch product details
+                setLoadingDetails(true);
+                const detailsResponse = await productDetailsApi.getByProduct(id);
+                if (detailsResponse.data) {
+                    setProductDetails(detailsResponse.data.details || []);
+                } else {
+                    setProductDetails([]);
+                }
+                setLoadingDetails(false);
             }
             setLoading(false);
         };
@@ -83,12 +116,28 @@ const ProductDetailsPage = () => {
     }, [id]);
 
     const handleAddToCart = async () => {
-        if (!product || product.quantity === 0) {
-            alert('Product is out of stock');
-            return;
+        if (!product) return;
+        
+        // Check stock based on sizes
+        if (product.sizes_enabled) {
+            if (!selectedSize) {
+                alert('Please select a size');
+                return;
+            }
+            const selectedSizeData = productSizes.find(s => s.size_name === selectedSize);
+            if (!selectedSizeData || selectedSizeData.quantity === 0) {
+                alert('Selected size is out of stock');
+                return;
+            }
+        } else {
+            if (product.quantity === 0) {
+                alert('Product is out of stock');
+                return;
+            }
         }
+        
         setAddingToCart(true);
-        const response = await cartApi.add(product.id, 1);
+        const response = await cartApi.add(product.id, 1, selectedSize || undefined);
         if (response.error) {
             alert(response.error);
         } else {
@@ -253,29 +302,52 @@ const ProductDetailsPage = () => {
                         {product.description || 'No description available.'}
                     </p>
 
-                    {/* Sizes */}
-                    <div className="mb-8">
-                        <h3 className="font-bold text-gray-800 mb-3">Select Size</h3>
-                        <div className="flex gap-3">
-                            {["Single", "Queen", "King", "Super King"].map(size => (
-                                <button
-                                    key={size}
-                                    onClick={() => setSelectedSize(size)}
-                                    className={`px-6 py-2 rounded-md border font-medium transition-all ${selectedSize === size
-                                        ? 'border-secondary bg-secondary text-white shadow-md'
-                                        : 'border-gray-200 text-gray-600 hover:border-secondary hover:text-secondary'
-                                        }`}
-                                >
-                                    {size}
-                                </button>
-                            ))}
+                    {/* Sizes - Only show if sizes are enabled */}
+                    {product.sizes_enabled && (
+                        <div className="mb-8">
+                            <h3 className="font-bold text-gray-800 mb-3">Select Size</h3>
+                            {loadingSizes ? (
+                                <div className="flex items-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                                    <span className="text-gray-500 text-sm">Loading sizes...</span>
+                                </div>
+                            ) : productSizes.length > 0 ? (
+                                <div className="flex flex-wrap gap-3">
+                                    {productSizes.map((size: any) => {
+                                        const isOutOfStock = size.quantity === 0;
+                                        const isSelected = selectedSize === size.size_name;
+                                        return (
+                                            <button
+                                                key={size.id || size.size_name}
+                                                onClick={() => !isOutOfStock && setSelectedSize(size.size_name)}
+                                                disabled={isOutOfStock}
+                                                className={`px-6 py-2 rounded-md border font-medium transition-all ${
+                                                    isOutOfStock
+                                                        ? 'border-gray-200 text-gray-300 cursor-not-allowed opacity-50'
+                                                        : isSelected
+                                                        ? 'border-secondary bg-secondary text-white shadow-md'
+                                                        : 'border-gray-200 text-gray-600 hover:border-secondary hover:text-secondary'
+                                                }`}
+                                                title={isOutOfStock ? 'Out of stock' : `${size.quantity} available`}
+                                            >
+                                                {size.size_name}
+                                                {!isOutOfStock && (
+                                                    <span className="ml-2 text-xs opacity-75">({size.quantity})</span>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 text-sm">No sizes available</p>
+                            )}
                         </div>
-                    </div>
+                    )}
 
                     <div className="flex flex-col sm:flex-row gap-4 mb-10">
                         <button
                             onClick={handleAddToCart}
-                            disabled={addingToCart || product.quantity === 0}
+                            disabled={addingToCart || (product.sizes_enabled ? !selectedSize : product.quantity === 0)}
                             className="flex-1 bg-primary text-secondary py-4 font-bold text-lg rounded-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl translate-y-0 hover:-translate-y-1 transform disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {addingToCart ? (
@@ -306,35 +378,51 @@ const ProductDetailsPage = () => {
                         </button>
                     </div>
 
-                    {/* Basics / Details */}
-                    <div className="border-t border-gray-200 py-6 space-y-4">
-                        <h3 className="font-bold text-xl text-primary font-serif">Basics & Care</h3>
-                        <ul className="list-disc pl-5 text-gray-600 space-y-2">
-                            <li><strong>Material:</strong> 100% Premium Cotton</li>
-                            <li><strong>Thread Count:</strong> 400 TC Satin Weave</li>
-                            <li><strong>Care:</strong> Machine wash cold, tumble dry low</li>
-                            <li><strong>Origin:</strong> Handcrafted in India</li>
-                            <li><strong>Stock:</strong> {product.quantity} available</li>
-                        </ul>
-                    </div>
+                    {/* Product Details - Dynamic */}
+                    {productDetails.length > 0 && (
+                        <div className="border-t border-gray-200 py-6 space-y-4">
+                            <h3 className="font-bold text-xl text-primary font-serif">Product Details</h3>
+                            {loadingDetails ? (
+                                <div className="flex items-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                                    <span className="text-gray-500 text-sm">Loading details...</span>
+                                </div>
+                            ) : (
+                                <ul className="list-disc pl-5 text-gray-600 space-y-2">
+                                    {productDetails.map((detail: any) => (
+                                        <li key={detail.id || detail.heading}>
+                                            <strong>{detail.heading}:</strong> {detail.value}
+                                        </li>
+                                    ))}
+                                    <li><strong>Stock:</strong> {product.quantity} available</li>
+                                </ul>
+                            )}
+                        </div>
+                    )}
 
                     {/* Payment Details */}
-                    <div className="border-t border-gray-200 py-6">
-                        <h3 className="font-bold text-gray-800 mb-4">Payment & Delivery</h3>
-                        <div className="flex gap-4 mb-4 grayscale opacity-70">
-                            <div className="h-8 w-12 bg-gray-200 rounded flex items-center justify-center text-xs font-bold">VISA</div>
-                            <div className="h-8 w-12 bg-gray-200 rounded flex items-center justify-center text-xs font-bold">MC</div>
-                            <div className="h-8 w-12 bg-gray-200 rounded flex items-center justify-center text-xs font-bold">UPI</div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
-                            <div className="flex items-center gap-2">
-                                <Truck className="w-5 h-5 text-secondary" /> Free Shipping over ₹999
+                    {(product.shipping_info || product.return_policy) && (
+                        <div className="border-t border-gray-200 py-6">
+                            <h3 className="font-bold text-gray-800 mb-4">Payment & Delivery</h3>
+                            <div className="flex gap-4 mb-4 grayscale opacity-70">
+                                <div className="h-8 w-12 bg-gray-200 rounded flex items-center justify-center text-xs font-bold">VISA</div>
+                                <div className="h-8 w-12 bg-gray-200 rounded flex items-center justify-center text-xs font-bold">MC</div>
+                                <div className="h-8 w-12 bg-gray-200 rounded flex items-center justify-center text-xs font-bold">UPI</div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Shield className="w-5 h-5 text-secondary" /> 30-Day Return Policy
+                            <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
+                                {product.shipping_info && (
+                                    <div className="flex items-center gap-2">
+                                        <Truck className="w-5 h-5 text-secondary" /> {product.shipping_info}
+                                    </div>
+                                )}
+                                {product.return_policy && (
+                                    <div className="flex items-center gap-2">
+                                        <Shield className="w-5 h-5 text-secondary" /> {product.return_policy}
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
@@ -355,7 +443,7 @@ const ProductDetailsPage = () => {
                             </p>
                         )}
                     </div>
-                    {isLoggedIn && !userReview && (
+                    {isLoggedIn && !userReview ? (
                         <button
                             onClick={() => setShowReviewForm(!showReviewForm)}
                             className="px-6 py-3 bg-primary text-secondary font-bold rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
@@ -363,11 +451,19 @@ const ProductDetailsPage = () => {
                             <MessageSquare size={20} />
                             Write a Review
                         </button>
-                    )}
+                    ) : !isLoggedIn ? (
+                        <Link
+                            to="/auth"
+                            className="px-6 py-3 bg-primary text-secondary font-bold rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                        >
+                            <MessageSquare size={20} />
+                            Login to Write a Review
+                        </Link>
+                    ) : null}
                 </div>
 
-                {/* Review Form */}
-                {showReviewForm && isLoggedIn && !userReview && (
+                {/* Review Form - Only show if logged in */}
+                {isLoggedIn && showReviewForm && !userReview && (
                     <div className="bg-gray-50 rounded-xl p-6 mb-8 border border-gray-200">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">Write Your Review</h3>
                         <div className="space-y-4">
@@ -378,8 +474,9 @@ const ProductDetailsPage = () => {
                                         <button
                                             key={rating}
                                             type="button"
-                                            onClick={() => setReviewRating(rating)}
-                                            className="focus:outline-none"
+                                            onClick={() => isLoggedIn && setReviewRating(rating)}
+                                            disabled={!isLoggedIn}
+                                            className={`focus:outline-none ${!isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
                                         >
                                             <Star
                                                 className={`w-8 h-8 transition-colors ${
@@ -394,12 +491,13 @@ const ProductDetailsPage = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Comment</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Comment (Optional)</label>
                                 <textarea
                                     value={reviewComment}
-                                    onChange={(e) => setReviewComment(e.target.value)}
+                                    onChange={(e) => isLoggedIn && setReviewComment(e.target.value)}
+                                    disabled={!isLoggedIn}
                                     rows={4}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${!isLoggedIn ? 'cursor-not-allowed opacity-50' : ''}`}
                                     placeholder="Share your experience with this product..."
                                 />
                             </div>

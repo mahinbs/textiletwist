@@ -100,3 +100,4 @@ The remaining static content (testimonials, brand values, etc.) are **marketing/
 
 **All functional data is now API-driven!** ✅
 
+

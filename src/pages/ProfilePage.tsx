@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Package, User, CreditCard, MapPin, Lock, LogOut, ChevronRight, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { authApi, ordersApi } from '../lib/api';
 
 const ProfilePage = () => {
-    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('orders');
     const [user, setUser] = useState<any>(null);
     const [orders, setOrders] = useState<any[]>([]);
@@ -32,8 +30,23 @@ const ProfilePage = () => {
     };
 
     const handleSignOut = async () => {
-        await authApi.logout();
-        navigate('/auth');
+        try {
+            // Call logout API to clear cookies
+            await authApi.logout();
+            
+            // Clear any local storage
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Force a full page reload to clear all state
+            window.location.href = '/auth';
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if API fails, clear local storage and redirect
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/auth';
+        }
     };
 
     const renderContent = () => {

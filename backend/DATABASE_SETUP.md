@@ -106,3 +106,4 @@ curl http://localhost:5000/categories
 4. Add product image upload functionality
 5. Implement inventory management alerts
 
+

@@ -106,3 +106,4 @@ CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created
 ✅ Auto-polling every 30 seconds
 ⏳ Customer notifications in profile (to be added)
 
+

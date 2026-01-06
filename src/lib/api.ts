@@ -135,10 +135,10 @@ export const cartApi = {
     return apiRequest<{ cart: any[] }>('/cart');
   },
 
-  add: async (product_id: string, quantity: number = 1) => {
+  add: async (product_id: string, quantity: number = 1, size?: string) => {
     return apiRequest<{ cartItem: any }>('/cart', {
       method: 'POST',
-      body: JSON.stringify({ product_id, quantity }),
+      body: JSON.stringify({ product_id, quantity, size }),
     });
   },
 
@@ -402,6 +402,46 @@ export const reviewsApi = {
 
   delete: async (id: string) => {
     return apiRequest(`/reviews/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Product Sizes API
+export const productSizesApi = {
+  getByProduct: async (productId: string) => {
+    return apiRequest<{ sizes: any[] }>(`/product-sizes/product/${productId}`);
+  },
+
+  create: async (productId: string, sizeName: string, quantity: number) => {
+    return apiRequest<{ size: any; message: string }>('/product-sizes', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: productId, size_name: sizeName, quantity }),
+    });
+  },
+
+  delete: async (id: string) => {
+    return apiRequest(`/product-sizes/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Product Details API
+export const productDetailsApi = {
+  getByProduct: async (productId: string) => {
+    return apiRequest<{ details: any[] }>(`/product-details/product/${productId}`);
+  },
+
+  create: async (productId: string, heading: string, value: string, displayOrder?: number) => {
+    return apiRequest<{ detail: any; message: string }>('/product-details', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: productId, heading, value, display_order: displayOrder || 0 }),
+    });
+  },
+
+  delete: async (id: string) => {
+    return apiRequest(`/product-details/${id}`, {
       method: 'DELETE',
     });
   },

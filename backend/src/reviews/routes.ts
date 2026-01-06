@@ -12,28 +12,50 @@ router.get('/product/:productId', optionalAuth, async (req: Request, res: Respon
   try {
     const { productId } = req.params;
 
-    const { data, error } = await supabaseAdmin!
+    // First get reviews
+    const { data: reviewsData, error: reviewsError } = await supabaseAdmin!
       .from('product_reviews')
-      .select(`
-        *,
-        user:user_profiles!product_reviews_user_id_fkey(id, full_name)
-      `)
+      .select('*')
       .eq('product_id', productId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      res.status(400).json({ error: error.message }); return;
+    if (reviewsError) {
+      res.status(400).json({ error: reviewsError.message }); return;
     }
 
+    // Then get user profiles for each review
+    const reviews = reviewsData || [];
+    const userIds = [...new Set(reviews.map((r: any) => r.user_id))];
+    
+    let userProfilesMap: Record<string, any> = {};
+    if (userIds.length > 0) {
+      const { data: profilesData } = await supabaseAdmin!
+        .from('user_profiles')
+        .select('id, full_name')
+        .in('id', userIds);
+      
+      if (profilesData) {
+        userProfilesMap = profilesData.reduce((acc: any, profile: any) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {});
+      }
+    }
+
+    // Combine reviews with user data
+    const reviewsWithUsers = reviews.map((review: any) => ({
+      ...review,
+      user: userProfilesMap[review.user_id] || { id: review.user_id, full_name: null }
+    }));
+
     // Calculate average rating and total count
-    const reviews = data || [];
-    const totalReviews = reviews.length;
+    const totalReviews = reviewsWithUsers.length;
     const avgRating = totalReviews > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+      ? reviewsWithUsers.reduce((sum: number, r: any) => sum + r.rating, 0) / totalReviews
       : 0;
 
     res.status(200).json({
-      reviews,
+      reviews: reviewsWithUsers,
       totalReviews,
       averageRating: Math.round(avgRating * 10) / 10, // Round to 1 decimal
     });
@@ -70,7 +92,7 @@ router.post('/', requireAuth, async (req: Request, res: Response): Promise<void>
     let review;
     if (existingReview) {
       // Update existing review
-      const { data, error } = await supabaseAdmin!
+      const { data: updateData, error: updateError } = await supabaseAdmin!
         .from('product_reviews')
         .update({
           rating,
@@ -78,19 +100,27 @@ router.post('/', requireAuth, async (req: Request, res: Response): Promise<void>
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingReview.id)
-        .select(`
-          *,
-          user:user_profiles(id, full_name)
-        `)
+        .select('*')
         .single();
 
-      if (error) {
-        res.status(400).json({ error: error.message }); return;
+      if (updateError) {
+        res.status(400).json({ error: updateError.message }); return;
       }
-      review = data;
+
+      // Get user profile
+      const { data: userProfile } = await supabaseAdmin!
+        .from('user_profiles')
+        .select('id, full_name')
+        .eq('id', req.user!.id)
+        .single();
+
+      review = {
+        ...updateData,
+        user: userProfile || { id: req.user!.id, full_name: null }
+      };
     } else {
       // Create new review
-      const { data, error } = await supabaseAdmin!
+      const { data: insertData, error: insertError } = await supabaseAdmin!
         .from('product_reviews')
         .insert({
           product_id,
@@ -98,16 +128,24 @@ router.post('/', requireAuth, async (req: Request, res: Response): Promise<void>
           rating,
           comment: comment || null,
         })
-        .select(`
-          *,
-          user:user_profiles(id, full_name)
-        `)
+        .select('*')
         .single();
 
-      if (error) {
-        res.status(400).json({ error: error.message }); return;
+      if (insertError) {
+        res.status(400).json({ error: insertError.message }); return;
       }
-      review = data;
+
+      // Get user profile
+      const { data: userProfile } = await supabaseAdmin!
+        .from('user_profiles')
+        .select('id, full_name')
+        .eq('id', req.user!.id)
+        .single();
+
+      review = {
+        ...insertData,
+        user: userProfile || { id: req.user!.id, full_name: null }
+      };
     }
 
     res.status(200).json({ review, message: existingReview ? 'Review updated' : 'Review created' });
@@ -157,4 +195,3 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response): Promise<
 });
 
 export default router;
-

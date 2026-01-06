@@ -1,14 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { Menu, Bell, X, LogOut, Settings } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { notificationsApi } from '../../lib/api';
+import { Link } from 'react-router-dom';
+import { notificationsApi, authApi } from '../../lib/api';
 
 interface AdminHeaderProps {
     onMenuClick: () => void;
 }
 
 const AdminHeader = ({ onMenuClick }: AdminHeaderProps) => {
-    const navigate = useNavigate();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -99,9 +98,24 @@ const AdminHeader = ({ onMenuClick }: AdminHeaderProps) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleLogout = () => {
-        // Logic to logout
-        navigate('/');
+    const handleLogout = async () => {
+        try {
+            // Call logout API to clear cookies
+            await authApi.logout();
+            
+            // Clear any local storage
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Force a full page reload to clear all state
+            window.location.href = '/auth';
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if API fails, clear local storage and redirect
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/auth';
+        }
     };
 
     return (

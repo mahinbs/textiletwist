@@ -506,3 +506,4 @@ See `supabase-schema.sql` for complete database structure.
 - `contact_enquiries` - Contact form submissions
 - `user_profiles` - Extended user information
 
+

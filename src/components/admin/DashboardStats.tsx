@@ -8,6 +8,9 @@ const DashboardStats = () => {
         totalOrders: 0,
         newCustomers: 0,
         pendingOrders: 0,
+        salesChange: 0,
+        ordersChange: 0,
+        customersChange: 0,
     });
     const [loading, setLoading] = useState(true);
 
@@ -38,11 +41,32 @@ const DashboardStats = () => {
                 ['pending', 'processing', 'confirmed'].includes(order.status?.toLowerCase())
             ).length;
 
+            // Calculate percentage changes (compare last 30 days vs previous 30 days)
+            const sixtyDaysAgo = new Date();
+            sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+            const previousPeriodOrders = orders.filter((order: any) => {
+                const orderDate = new Date(order.created_at);
+                return orderDate >= sixtyDaysAgo && orderDate < thirtyDaysAgo;
+            });
+            const currentPeriodSales = recentOrders.reduce((sum: number, order: any) => sum + parseFloat(order.total_amount || 0), 0);
+            const previousPeriodSales = previousPeriodOrders.reduce((sum: number, order: any) => sum + parseFloat(order.total_amount || 0), 0);
+            const salesChange = previousPeriodSales > 0 ? ((currentPeriodSales - previousPeriodSales) / previousPeriodSales * 100) : 0;
+            
+            const currentPeriodOrdersCount = recentOrders.length;
+            const previousPeriodOrdersCount = previousPeriodOrders.length;
+            const ordersChange = previousPeriodOrdersCount > 0 ? ((currentPeriodOrdersCount - previousPeriodOrdersCount) / previousPeriodOrdersCount * 100) : 0;
+            
+            const previousPeriodCustomers = new Set(previousPeriodOrders.map((order: any) => order.customer_email)).size;
+            const customersChange = previousPeriodCustomers > 0 ? ((newCustomers - previousPeriodCustomers) / previousPeriodCustomers * 100) : 0;
+
             setStats({
                 totalSales,
                 totalOrders,
                 newCustomers,
                 pendingOrders,
+                salesChange,
+                ordersChange,
+                customersChange,
             });
         } catch (error) {
             console.error('Error fetching stats:', error);
@@ -51,13 +75,19 @@ const DashboardStats = () => {
         }
     };
 
+    const formatChange = (change: number) => {
+        if (change === 0) return '0%';
+        const sign = change > 0 ? '+' : '';
+        return `${sign}${change.toFixed(1)}%`;
+    };
+
     const statsData = [
         {
             label: 'Total Sales',
             value: `₹${Math.round(stats.totalSales).toLocaleString()}`,
             icon: DollarSign,
-            change: '+12.5%', // TODO: Calculate from previous period
-            positive: true,
+            change: formatChange(stats.salesChange),
+            positive: stats.salesChange >= 0,
             bg: 'bg-green-100',
             color: 'text-green-600',
         },
@@ -65,8 +95,8 @@ const DashboardStats = () => {
             label: 'Total Orders',
             value: stats.totalOrders.toString(),
             icon: ShoppingBag,
-            change: '+8.2%', // TODO: Calculate from previous period
-            positive: true,
+            change: formatChange(stats.ordersChange),
+            positive: stats.ordersChange >= 0,
             bg: 'bg-blue-100',
             color: 'text-blue-600',
         },
@@ -74,8 +104,8 @@ const DashboardStats = () => {
             label: 'New Customers',
             value: stats.newCustomers.toString(),
             icon: Users,
-            change: '-2.1%', // TODO: Calculate from previous period
-            positive: false,
+            change: formatChange(stats.customersChange),
+            positive: stats.customersChange >= 0,
             bg: 'bg-purple-100',
             color: 'text-purple-600',
         },

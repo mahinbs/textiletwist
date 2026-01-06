@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Filter, Bold, Italic, List, Type, Loader2, Upload, X } from 'lucide-react';
 import Modal from '../../components/common/Modal';
-import { productsApi, categoriesApi } from '../../lib/api';
+import { productsApi, categoriesApi, productSizesApi, productDetailsApi } from '../../lib/api';
 import { fileToBase64, validateImageFile } from '../../lib/fileUtils';
 import { uploadApi } from '../../lib/api';
 
@@ -16,6 +16,12 @@ interface Product {
     images: string[];
     description: string;
     is_active: boolean;
+    material?: string;
+    thread_count?: string;
+    care_instructions?: string;
+    origin?: string;
+    shipping_info?: string;
+    return_policy?: string;
     category?: {
         id: string;
         name: string;
@@ -36,10 +42,17 @@ const AdminProductsPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
-    const [formData, setFormData] = useState<Partial<Product>>({});
+    const [formData, setFormData] = useState<Partial<Product & { sizes_enabled: boolean }>>({});
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [imageError, setImageError] = useState<string | null>(null);
+    const [sizesEnabled, setSizesEnabled] = useState(false);
+    const [productSizes, setProductSizes] = useState<Array<{ id?: string; size_name: string; quantity: number }>>([]);
+    const [newSizeName, setNewSizeName] = useState('');
+    const [newSizeQuantity, setNewSizeQuantity] = useState(0);
+    const [productDetails, setProductDetails] = useState<Array<{ id?: string; heading: string; value: string; display_order: number }>>([]);
+    const [newDetailHeading, setNewDetailHeading] = useState('');
+    const [newDetailValue, setNewDetailValue] = useState('');
 
     useEffect(() => {
         fetchProducts();
@@ -81,6 +94,12 @@ const AdminProductsPage = () => {
                 images: product.images || [],
                 description: product.description || '',
                 is_active: product.is_active,
+                material: product.material || '',
+                thread_count: product.thread_count || '',
+                care_instructions: product.care_instructions || '',
+                origin: product.origin || '',
+                shipping_info: product.shipping_info || '',
+                return_policy: product.return_policy || '',
             });
             setImageFiles([]);
             setImagePreviews(product.images && product.images.length > 0 ? product.images : (product.image_url ? [product.image_url] : []));
@@ -97,11 +116,24 @@ const AdminProductsPage = () => {
                 images: [],
                 description: '',
                 is_active: true,
+                material: '',
+                thread_count: '',
+                care_instructions: '',
+                origin: '',
+                shipping_info: '',
+                return_policy: '',
             });
             setImageFiles([]);
             setImagePreviews([]);
             setImageError(null);
+            setSizesEnabled(false);
+            setProductSizes([]);
+            setProductDetails([]);
         }
+        setNewSizeName('');
+        setNewSizeQuantity(0);
+        setNewDetailHeading('');
+        setNewDetailValue('');
         setIsModalOpen(true);
     };
 
@@ -149,6 +181,19 @@ const AdminProductsPage = () => {
             return;
         }
 
+        // Validate sizes if enabled
+        if (sizesEnabled) {
+            const totalSizeQuantity = productSizes.reduce((sum, size) => sum + size.quantity, 0);
+            if (productSizes.length === 0) {
+                alert('Please add at least one size when sizes are enabled');
+                return;
+            }
+            if (totalSizeQuantity !== (formData.quantity || 0)) {
+                alert(`Total size quantities (${totalSizeQuantity}) must equal product quantity (${formData.quantity || 0})`);
+                return;
+            }
+        }
+
         // Upload new image files to Supabase Storage
         let images = formData.images || [];
         if (imageFiles.length > 0) {
@@ -172,33 +217,144 @@ const AdminProductsPage = () => {
 
         const productData = {
             ...formData,
+            sizes_enabled: sizesEnabled,
             images: images.length > 0 ? images : [],
             image_url: images.length > 0 ? images[0] : null, // First image as primary
         };
 
+        let productId: string;
         if (currentProduct) {
             // Edit
             const response = await productsApi.update(currentProduct.id, productData);
             if (response.error) {
                 alert(response.error);
-            } else {
-                await fetchProducts();
-                setIsModalOpen(false);
-                setImageFiles([]);
-                setImagePreviews([]);
+                return;
             }
+            productId = currentProduct.id;
         } else {
             // Add
             const response = await productsApi.create(productData);
             if (response.error) {
                 alert(response.error);
-            } else {
-                await fetchProducts();
-                setIsModalOpen(false);
-                setImageFiles([]);
-                setImagePreviews([]);
+                return;
+            }
+            productId = response.data?.product?.id;
+        }
+
+        // Save product sizes
+        if (sizesEnabled && productId) {
+            // Get existing sizes
+            const existingSizesResponse = await productSizesApi.getByProduct(productId);
+            const existingSizes = existingSizesResponse.data?.sizes || [];
+
+            // Delete sizes that are no longer in the list
+            for (const existingSize of existingSizes) {
+                if (!productSizes.find(s => s.id === existingSize.id)) {
+                    await productSizesApi.delete(existingSize.id);
+                }
+            }
+
+            // Create or update sizes
+            for (const size of productSizes) {
+                await productSizesApi.create(productId, size.size_name, size.quantity);
+            }
+        } else if (productId) {
+            // Delete all sizes if sizes are disabled
+            const existingSizesResponse = await productSizesApi.getByProduct(productId);
+            const existingSizes = existingSizesResponse.data?.sizes || [];
+            for (const size of existingSizes) {
+                await productSizesApi.delete(size.id);
             }
         }
+
+        // Save product details
+        if (productId) {
+            // Get existing details
+            const existingDetailsResponse = await productDetailsApi.getByProduct(productId);
+            const existingDetails = existingDetailsResponse.data?.details || [];
+
+            // Delete details that are no longer in the list
+            for (const existingDetail of existingDetails) {
+                if (!productDetails.find(d => d.id === existingDetail.id)) {
+                    await productDetailsApi.delete(existingDetail.id);
+                }
+            }
+
+            // Create or update details
+            for (let i = 0; i < productDetails.length; i++) {
+                const detail = productDetails[i];
+                await productDetailsApi.create(productId, detail.heading, detail.value, i);
+            }
+        }
+
+        await fetchProducts();
+        setIsModalOpen(false);
+        setImageFiles([]);
+        setImagePreviews([]);
+    };
+
+    const handleAddSize = () => {
+        if (!newSizeName.trim()) {
+            alert('Size name is required');
+            return;
+        }
+        if (productSizes.find(s => s.size_name.toLowerCase() === newSizeName.trim().toLowerCase())) {
+            alert('Size already exists');
+            return;
+        }
+        const totalSizeQuantity = productSizes.reduce((sum, size) => sum + size.quantity, 0);
+        const remainingQuantity = (formData.quantity || 0) - totalSizeQuantity;
+        if (newSizeQuantity > remainingQuantity) {
+            alert(`Cannot add more than ${remainingQuantity} (remaining from total quantity)`);
+            return;
+        }
+        setProductSizes([...productSizes, { size_name: newSizeName.trim(), quantity: newSizeQuantity }]);
+        setNewSizeName('');
+        setNewSizeQuantity(0);
+    };
+
+    const handleRemoveSize = (index: number) => {
+        setProductSizes(productSizes.filter((_size, i) => i !== index));
+    };
+
+    const handleUpdateSizeQuantity = (index: number, quantity: number) => {
+        const totalOtherSizes = productSizes.reduce((sum, size, i) => i !== index ? sum + size.quantity : sum, 0);
+        const maxQuantity = (formData.quantity || 0) - totalOtherSizes;
+        if (quantity > maxQuantity) {
+            alert(`Cannot exceed ${maxQuantity} (remaining from total quantity)`);
+            return;
+        }
+        const updatedSizes = [...productSizes];
+        updatedSizes[index].quantity = quantity;
+        setProductSizes(updatedSizes);
+    };
+
+    const handleAddDetail = () => {
+        if (!newDetailHeading.trim() || !newDetailValue.trim()) {
+            alert('Heading and value are required');
+            return;
+        }
+        if (productDetails.find(d => d.heading.toLowerCase() === newDetailHeading.trim().toLowerCase())) {
+            alert('Detail with this heading already exists');
+            return;
+        }
+        setProductDetails([...productDetails, { 
+            heading: newDetailHeading.trim(), 
+            value: newDetailValue.trim(),
+            display_order: productDetails.length
+        }]);
+        setNewDetailHeading('');
+        setNewDetailValue('');
+    };
+
+    const handleRemoveDetail = (index: number) => {
+        setProductDetails(productDetails.filter((_detail, i) => i !== index));
+    };
+
+    const handleUpdateDetail = (index: number, field: 'heading' | 'value', newValue: string) => {
+        const updatedDetails = [...productDetails];
+        updatedDetails[index][field] = newValue;
+        setProductDetails(updatedDetails);
     };
 
     const handleDeleteClick = (product: Product) => {
@@ -445,9 +601,26 @@ const AdminProductsPage = () => {
                             <input
                                 type="number"
                                 value={formData.quantity || 0}
-                                onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                                onChange={(e) => {
+                                    const newQuantity = Number(e.target.value);
+                                    setFormData({ ...formData, quantity: newQuantity });
+                                    // If sizes enabled, validate total
+                                    if (sizesEnabled) {
+                                        const totalSizeQuantity = productSizes.reduce((sum, size) => sum + size.quantity, 0);
+                                        if (totalSizeQuantity > newQuantity) {
+                                            // Adjust sizes proportionally or alert
+                                            alert(`Total size quantities (${totalSizeQuantity}) exceeds new quantity (${newQuantity}). Please adjust sizes.`);
+                                        }
+                                    }
+                                }}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                disabled={sizesEnabled}
                             />
+                            {sizesEnabled && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Total: {productSizes.reduce((sum, size) => sum + size.quantity, 0)} / {formData.quantity || 0}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Discount (%)</label>
@@ -462,6 +635,92 @@ const AdminProductsPage = () => {
                             />
                         </div>
                     </div>
+                    
+                    {/* Sizes Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Enable Sizes</label>
+                            <p className="text-xs text-gray-500">Allow different sizes (Small, Medium, Large, etc.) with individual quantities</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={sizesEnabled}
+                                onChange={(e) => {
+                                    setSizesEnabled(e.target.checked);
+                                    if (!e.target.checked) {
+                                        setProductSizes([]);
+                                    }
+                                }}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+
+                    {/* Size Management */}
+                    {sizesEnabled && (
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-gray-700">Product Sizes</h4>
+                                <span className="text-sm text-gray-500">
+                                    Total: {productSizes.reduce((sum, size) => sum + size.quantity, 0)} / {formData.quantity || 0}
+                                </span>
+                            </div>
+                            
+                            {/* Existing Sizes */}
+                            {productSizes.length > 0 && (
+                                <div className="space-y-2">
+                                    {productSizes.map((size, index) => (
+                                        <div key={index} className="flex items-center gap-2 bg-white p-3 rounded-lg border border-gray-200">
+                                            <span className="flex-1 font-medium text-gray-700">{size.size_name}</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={size.quantity}
+                                                onChange={(e) => handleUpdateSizeQuantity(index, Number(e.target.value))}
+                                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveSize(index)}
+                                                className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Add New Size */}
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newSizeName}
+                                    onChange={(e) => setNewSizeName(e.target.value)}
+                                    placeholder="Size name (e.g., Small, Medium, Large)"
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                />
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={newSizeQuantity}
+                                    onChange={(e) => setNewSizeQuantity(Number(e.target.value))}
+                                    placeholder="Qty"
+                                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleAddSize}
+                                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium flex items-center gap-1"
+                                >
+                                    <Plus size={16} />
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
                         {imagePreviews.length > 0 && (
@@ -512,6 +771,143 @@ const AdminProductsPage = () => {
                         )}
                         <p className="mt-1 text-xs text-gray-500">First image will be used as the primary product image.</p>
                     </div>
+                    
+                    {/* Product Details Section */}
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4">Product Details</h3>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Material</label>
+                                    <input
+                                        type="text"
+                                        value={formData.material || ''}
+                                        onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        placeholder="e.g., 100% Premium Cotton"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Thread Count</label>
+                                    <input
+                                        type="text"
+                                        value={formData.thread_count || ''}
+                                        onChange={(e) => setFormData({ ...formData, thread_count: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        placeholder="e.g., 400 TC Satin Weave"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Care Instructions</label>
+                                <input
+                                    type="text"
+                                    value={formData.care_instructions || ''}
+                                    onChange={(e) => setFormData({ ...formData, care_instructions: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    placeholder="e.g., Machine wash cold, tumble dry low"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
+                                <input
+                                    type="text"
+                                    value={formData.origin || ''}
+                                    onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    placeholder="e.g., Handcrafted in India"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Information</label>
+                                <input
+                                    type="text"
+                                    value={formData.shipping_info || ''}
+                                    onChange={(e) => setFormData({ ...formData, shipping_info: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    placeholder="e.g., Free Shipping over ₹999"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Return Policy</label>
+                                <input
+                                    type="text"
+                                    value={formData.return_policy || ''}
+                                    onChange={(e) => setFormData({ ...formData, return_policy: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    placeholder="e.g., 30-Day Return Policy"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Product Details Management */}
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-gray-700">Product Details</h4>
+                            <p className="text-xs text-gray-500">Add custom detail fields with headings and values</p>
+                        </div>
+                        
+                        {/* Existing Details */}
+                        {productDetails.length > 0 && (
+                            <div className="space-y-2">
+                                {productDetails.map((detail, index) => (
+                                    <div key={index} className="bg-white p-3 rounded-lg border border-gray-200">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <input
+                                                type="text"
+                                                value={detail.heading}
+                                                onChange={(e) => handleUpdateDetail(index, 'heading', e.target.value)}
+                                                placeholder="Heading (e.g., Material)"
+                                                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveDetail(index)}
+                                                className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={detail.value}
+                                            onChange={(e) => handleUpdateDetail(index, 'value', e.target.value)}
+                                            placeholder="Value (e.g., 100% Premium Cotton)"
+                                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Add New Detail */}
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={newDetailHeading}
+                                onChange={(e) => setNewDetailHeading(e.target.value)}
+                                placeholder="Heading (e.g., Material, Thread Count)"
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                            <input
+                                type="text"
+                                value={newDetailValue}
+                                onChange={(e) => setNewDetailValue(e.target.value)}
+                                placeholder="Value"
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleAddDetail}
+                                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium flex items-center gap-1"
+                            >
+                                <Plus size={16} />
+                                Add
+                            </button>
+                        </div>
+                    </div>
+
                     <div>
                         <label className="flex items-center gap-2">
                             <input

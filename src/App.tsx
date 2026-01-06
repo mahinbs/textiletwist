@@ -20,8 +20,6 @@ import AdminEnquiriesPage from './pages/admin/AdminEnquiriesPage';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
 
-import AdminLoginPage from './pages/admin/AdminLoginPage';
-
 function App() {
     return (
         <Router>
@@ -38,9 +36,6 @@ function App() {
                     <Route path="auth" element={<AuthPage />} />
                     <Route path="profile" element={<ProfilePage />} />
                 </Route>
-
-                {/* Admin Auth */}
-                <Route path="/admin/login" element={<AdminLoginPage />} />
 
                 {/* Admin Layout */}
                 <Route path="/admin" element={<AdminLayout />}>

@@ -58,3 +58,4 @@ if (!supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
 console.log('\n✅ All environment variables are set correctly!');
 console.log('🚀 You can now run: npm run create-admin');
 
+

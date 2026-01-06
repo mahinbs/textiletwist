@@ -158,3 +158,4 @@ CREATE INDEX IF NOT EXISTS idx_product_reviews_created_at ON product_reviews(cre
    - Update order status → Check customer notifications
    - Set product stock to 4 → Place order → Check low stock notification
 
+

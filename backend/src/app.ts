@@ -13,6 +13,8 @@ import enquiryRoutes from './enquiries/routes.js';
 import storageRoutes from './storage/routes.js';
 import notificationRoutes from './notifications/routes.js';
 import reviewRoutes from './reviews/routes.js';
+import productSizesRoutes from './product-sizes/routes.js';
+import productDetailsRoutes from './product-details/routes.js';
 
 const app = express();
 
@@ -48,6 +50,8 @@ app.use('/enquiries', enquiryRoutes);
 app.use('/upload', storageRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/reviews', reviewRoutes);
+app.use('/product-sizes', productSizesRoutes);
+app.use('/product-details', productDetailsRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {
