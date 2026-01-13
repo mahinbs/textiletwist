@@ -177,8 +177,8 @@ const AuthPage = () => {
                                 </>
                             ) : (
                                 <>
-                                    {isLogin ? 'Sign In' : 'Create Account'}
-                                    <ArrowRight size={20} />
+                            {isLogin ? 'Sign In' : 'Create Account'}
+                            <ArrowRight size={20} />
                                 </>
                             )}
                         </button>

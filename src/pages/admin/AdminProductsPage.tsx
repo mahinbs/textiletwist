@@ -357,8 +357,8 @@ const AdminProductsPage = () => {
                 alert(response.error);
             } else {
                 await fetchProducts();
-                setIsDeleteModalOpen(false);
-                setCurrentProduct(null);
+            setIsDeleteModalOpen(false);
+            setCurrentProduct(null);
             }
         }
     };
@@ -446,66 +446,66 @@ const AdminProductsPage = () => {
                         <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50 text-gray-600 text-xs uppercase font-semibold">
-                                <tr>
-                                    <th className="px-6 py-4">Product</th>
-                                    <th className="px-6 py-4">Category</th>
-                                    <th className="px-6 py-4">Price</th>
-                                    <th className="px-6 py-4">Stock</th>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 text-gray-600 text-xs uppercase font-semibold">
+                            <tr>
+                                <th className="px-6 py-4">Product</th>
+                                <th className="px-6 py-4">Category</th>
+                                <th className="px-6 py-4">Price</th>
+                                <th className="px-6 py-4">Stock</th>
                                     <th className="px-6 py-4">Discount</th>
-                                    <th className="px-6 py-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {filteredProducts.map((product) => (
-                                    <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100">
+                                <th className="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {filteredProducts.map((product) => (
+                                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100">
                                                     <img
                                                         src={product.image_url || product.images?.[0] || '/images/bed-linen.png'}
                                                         alt={product.name}
                                                         className="w-full h-full object-cover"
                                                     />
-                                                </div>
-                                                <span className="font-medium text-gray-800">{product.name}</span>
                                             </div>
-                                        </td>
+                                            <span className="font-medium text-gray-800">{product.name}</span>
+                                        </div>
+                                    </td>
                                         <td className="px-6 py-4 text-gray-600">{product.category?.name || 'Uncategorized'}</td>
-                                        <td className="px-6 py-4 font-medium text-gray-800">₹{product.price.toLocaleString()}</td>
-                                        <td className="px-6 py-4">
+                                    <td className="px-6 py-4 font-medium text-gray-800">₹{product.price.toLocaleString()}</td>
+                                    <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded-md text-xs font-medium ${product.quantity > 10 ? 'bg-green-100 text-green-700' :
                                                 product.quantity > 0 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
-                                                }`}>
+                                            }`}>
                                                 {product.quantity} in stock
-                                            </span>
-                                        </td>
+                                        </span>
+                                    </td>
                                         <td className="px-6 py-4 text-gray-600">
                                             {product.discount_percentage > 0 ? `${product.discount_percentage}%` : '-'}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleOpenModal(product)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                >
-                                                    <Edit2 size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteClick(product)}
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => handleOpenModal(product)}
+                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            >
+                                                <Edit2 size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(product)}
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
                 )}
                 {!loading && filteredProducts.length === 0 && (
                     <div className="p-8 text-center text-gray-500">
@@ -584,10 +584,10 @@ const AdminProductsPage = () => {
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
-                            <input
-                                type="number"
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
+                        <input
+                            type="number"
                                 value={formData.quantity || 0}
                                 onChange={(e) => {
                                     const newQuantity = Number(e.target.value);
@@ -619,8 +619,8 @@ const AdminProductsPage = () => {
                                 max="100"
                                 value={formData.discount_percentage || 0}
                                 onChange={(e) => setFormData({ ...formData, discount_percentage: Number(e.target.value) })}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            />
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
                         </div>
                     </div>
                     
@@ -809,8 +809,8 @@ const AdminProductsPage = () => {
                                 placeholder="Heading (e.g., Material, Thread Count)"
                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
-                            <input
-                                type="text"
+                        <input
+                            type="text"
                                 value={newDetailValue}
                                 onChange={(e) => setNewDetailValue(e.target.value)}
                                 placeholder="Value"
