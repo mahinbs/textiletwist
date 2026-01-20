@@ -5,12 +5,10 @@ export const ACCESS_TOKEN_COOKIE = 'sb_access_token';
 export const REFRESH_TOKEN_COOKIE = 'sb_refresh_token';
 
 // Cookie configuration
-const isProduction = process.env.NODE_ENV === 'production';
-
 export const cookieOptions: CookieOptions = {
   httpOnly: true, // Prevents JavaScript access (XSS protection)
-  secure: isProduction, // HTTPS only in production
-  sameSite: isProduction ? 'none' : 'lax', // 'none' allows cross-domain cookies in production
+  secure: true, // Always use secure in production (HTTPS)
+  sameSite: 'none', // Allow cross-domain cookies
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   path: '/',
 };
@@ -25,8 +23,8 @@ export const refreshCookieOptions: CookieOptions = {
  */
 export const clearCookieOptions: CookieOptions = {
   httpOnly: true,
-  secure: isProduction,
-  sameSite: isProduction ? 'none' : 'lax',
+  secure: true,
+  sameSite: 'none',
   path: '/',
   maxAge: 0,
 };
