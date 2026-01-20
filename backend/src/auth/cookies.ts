@@ -10,7 +10,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 export const cookieOptions: CookieOptions = {
   httpOnly: true, // Prevents JavaScript access (XSS protection)
   secure: isProduction, // HTTPS only in production
-  sameSite: isProduction ? 'strict' : 'lax', // CSRF protection
+  sameSite: isProduction ? 'none' : 'lax', // 'none' allows cross-domain cookies in production
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   path: '/',
 };
@@ -26,7 +26,7 @@ export const refreshCookieOptions: CookieOptions = {
 export const clearCookieOptions: CookieOptions = {
   httpOnly: true,
   secure: isProduction,
-  sameSite: isProduction ? 'strict' : 'lax',
+  sameSite: isProduction ? 'none' : 'lax',
   path: '/',
   maxAge: 0,
 };
