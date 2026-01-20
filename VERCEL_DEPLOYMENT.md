@@ -27,7 +27,19 @@ Vercel should auto-detect these settings from `vercel.json`:
 
 ### 3. Set Environment Variables
 
-**IMPORTANT**: You must set the following environment variable in Vercel:
+**IMPORTANT**: You have two options for the API URL:
+
+#### Option 1: Use Vercel Proxy (Recommended for Cookie Support)
+
+The `vercel.json` includes a proxy that forwards `/api/*` requests to your Render backend. This allows cookies to work properly since requests go through the same domain.
+
+1. Go to your project settings in Vercel
+2. Navigate to **Settings** → **Environment Variables**
+3. **Don't set VITE_API_URL** - the code will automatically use `/api` proxy in production
+
+#### Option 2: Direct Backend URL
+
+If you prefer to use the direct Render URL:
 
 1. Go to your project settings in Vercel
 2. Navigate to **Settings** → **Environment Variables**
@@ -38,6 +50,8 @@ Variable Name: VITE_API_URL
 Value: https://textiletwist.onrender.com
 Environment: Production, Preview, Development (select all)
 ```
+
+**Note**: With Option 2, cookies may not work properly due to cross-domain restrictions. Option 1 (proxy) is recommended.
 
 ### 4. Deploy
 

@@ -1,5 +1,22 @@
 // API Client Utility
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Use /api proxy in production (Vercel), or direct URL from env, or localhost
+const getApiBaseUrl = () => {
+  // If we're on the production domain and have a proxy, use it
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
+    // Check if we should use proxy (when Vercel proxy is configured)
+    const envUrl = import.meta.env.VITE_API_URL;
+    // If env URL is set and matches Render, we might want to use proxy
+    // But for now, use env URL if set, otherwise try /api proxy
+    if (envUrl && !envUrl.includes('localhost')) {
+      return envUrl;
+    }
+    // Try /api proxy (Vercel will rewrite this to backend)
+    return '/api';
+  }
+  return import.meta.env.VITE_API_URL || 'http://localhost:5000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface ApiResponse<T> {
   data?: T;

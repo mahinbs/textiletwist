@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { authApi } from '../lib/api';
 
 const AuthPage = () => {
-    const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -27,12 +26,18 @@ const AuthPage = () => {
                 if (response.error) {
                     setError(response.error);
                 } else {
+                    // Store user info in localStorage for immediate access
+                    if (response.data?.user) {
+                        localStorage.setItem('user', JSON.stringify(response.data.user));
+                    }
+                    
                     // Check user role and redirect accordingly
                     const userRole = response.data?.user?.role || 'user';
                     if (userRole === 'admin') {
-                        navigate('/admin');
+                        // Use window.location for a full page reload to ensure cookies are set
+                        window.location.href = '/admin';
                     } else {
-                        navigate('/profile');
+                        window.location.href = '/profile';
                     }
                 }
             } else {
@@ -40,8 +45,12 @@ const AuthPage = () => {
                 if (response.error) {
                     setError(response.error);
                 } else {
+                    // Store user info in localStorage
+                    if (response.data?.user) {
+                        localStorage.setItem('user', JSON.stringify(response.data.user));
+                    }
                     // New signups are always regular users
-                    navigate('/profile');
+                    window.location.href = '/profile';
                 }
             }
         } catch (err) {

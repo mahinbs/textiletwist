@@ -68,8 +68,8 @@ async function createAdminUser() {
     });
 
     if (authError) {
-      if (authError.message.includes('already registered')) {
-        console.log('⚠️  User already exists. Updating to admin...');
+      if (authError.message.includes('already registered') || authError.code === 'email_exists') {
+        console.log('⚠️  User already exists. Resetting password and updating to admin...');
         
         // Get existing user
         const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
@@ -79,6 +79,22 @@ async function createAdminUser() {
           console.error('❌ Could not find existing user');
           return;
         }
+
+        // Reset password
+        const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(
+          user.id,
+          {
+            password: adminPassword,
+            email_confirm: true, // Ensure email is confirmed
+          }
+        );
+
+        if (passwordError) {
+          console.error('❌ Error resetting password:', passwordError);
+          return;
+        }
+
+        console.log('✅ Password reset successfully!');
 
         // Update user profile to admin
         const { error: profileError } = await supabaseAdmin
@@ -94,6 +110,12 @@ async function createAdminUser() {
         } else {
           console.log('✅ User updated to admin successfully!');
         }
+
+        console.log('\n✅ Admin user password reset successfully!');
+        console.log('📧 Email:', adminEmail);
+        console.log('🔑 New Password:', adminPassword);
+        console.log('👤 User ID:', user.id);
+        console.log('\n🎉 You can now login with the new password');
         return;
       }
       
