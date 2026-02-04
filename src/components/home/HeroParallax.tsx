@@ -14,7 +14,7 @@ const HeroParallax = () => {
     const textY = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
     return (
-        <div ref={ref} className="relative h-screen overflow-hidden flex items-center justify-center">
+        <div ref={ref} className="relative pt-14 min-h-screen overflow-hidden flex items-center justify-center">
             <motion.div
                 className="absolute inset-0 z-0"
                 style={{ y: backgroundY }}

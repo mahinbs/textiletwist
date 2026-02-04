@@ -184,7 +184,7 @@ const Navbar = () => {
                         <Heart className="w-6 h-6" />
                     </Link>
 
-                    <Link to="/auth" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative hidden sm:block`}>
+                    <Link to="/auth" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative`}>
                         <User className="w-6 h-6" />
                     </Link>
 
