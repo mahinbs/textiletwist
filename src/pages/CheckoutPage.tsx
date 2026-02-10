@@ -101,9 +101,14 @@ const CheckoutPage = () => {
             // Clear buyNow product from session storage
             sessionStorage.removeItem('buyNowProduct');
             
-            const paymentStatus = formData.payment_method === 'online' ? 'Payment successful!' : 'Order placed successfully!';
-            alert(paymentStatus + ' Thank you for your order!');
-            navigate('/');
+            // Redirect to order confirmation page with order ID
+            const orderId = response.data?.order?.id;
+            if (orderId) {
+                navigate(`/order-confirmation?order_id=${orderId}`);
+            } else {
+                alert('Order placed successfully! Thank you for your order!');
+                navigate('/');
+            }
         }
         setCheckingOut(false);
     };

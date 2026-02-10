@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, ShoppingBag, Heart, User, Plus, } from 'lucide-react';
+import { Menu, X, ShoppingBag, Heart, User, Plus, Package } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { categoriesApi } from '../../lib/api';
@@ -180,15 +180,19 @@ const Navbar = () => {
 
                 {/* Mobile Menu & Cart */}
                 <div className="flex items-center gap-6">
-                    <Link to="/wishlist" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative hidden sm:block`}>
+                    <Link to="/track-order" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative hidden sm:block`} title="Track Order">
+                        <Package className="w-6 h-6" />
+                    </Link>
+
+                    <Link to="/wishlist" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative hidden sm:block`} title="Wishlist">
                         <Heart className="w-6 h-6" />
                     </Link>
 
-                    <Link to="/auth" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative`}>
+                    <Link to="/auth" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative`} title="Account">
                         <User className="w-6 h-6" />
                     </Link>
 
-                    <Link to="/cart" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative`}>
+                    <Link to="/cart" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative`} title="Cart">
                         <ShoppingBag className="w-6 h-6" />
                     </Link>
 

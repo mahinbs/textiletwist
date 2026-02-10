@@ -7,6 +7,8 @@ import ProductDetailsPage from './pages/ProductDetailsPage';
 import ContactPage from './pages/ContactPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import TrackOrderPage from './pages/TrackOrderPage';
 import WishlistPage from './pages/WishlistPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
@@ -34,6 +36,8 @@ function App() {
                     <Route path="contact" element={<ContactPage />} />
                     <Route path="cart" element={<CartPage />} />
                     <Route path="checkout" element={<CheckoutPage />} />
+                    <Route path="order-confirmation" element={<OrderConfirmationPage />} />
+                    <Route path="track-order" element={<TrackOrderPage />} />
                     <Route path="wishlist" element={<WishlistPage />} />
                     <Route path="auth" element={<AuthPage />} />
                     <Route path="profile" element={<ProfilePage />} />
