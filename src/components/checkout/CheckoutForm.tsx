@@ -104,6 +104,8 @@ const CheckoutForm = ({ cartItems, subtotal, shipping, tax, total, onCheckout, o
 
     const handleRazorpayPayment = async () => {
         try {
+            console.log('Starting Razorpay payment...', { total });
+            
             // Create Razorpay order
             const orderResponse = await paymentApi.createOrder(
                 total,
@@ -115,11 +117,15 @@ const CheckoutForm = ({ cartItems, subtotal, shipping, tax, total, onCheckout, o
                 }
             );
 
+            console.log('Razorpay order response:', orderResponse);
+
             if (orderResponse.error || !orderResponse.data) {
+                console.error('Failed to create Razorpay order:', orderResponse.error);
                 throw new Error(orderResponse.error || 'Failed to create payment order');
             }
 
             const { order, key_id } = orderResponse.data;
+            console.log('Opening Razorpay with order:', order.id);
 
             // Configure Razorpay options
             const options = {
@@ -176,9 +182,15 @@ const CheckoutForm = ({ cartItems, subtotal, shipping, tax, total, onCheckout, o
                 },
             };
 
+            // Check if Razorpay is loaded
+            if (!window.Razorpay) {
+                throw new Error('Razorpay SDK not loaded. Please refresh the page.');
+            }
+
             // Open Razorpay checkout
             const razorpay = new window.Razorpay(options);
             razorpay.open();
+            console.log('Razorpay modal opened');
         } catch (error: any) {
             console.error('Razorpay payment error:', error);
             alert(error.message || 'Failed to initiate payment');
