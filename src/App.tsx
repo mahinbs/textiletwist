@@ -6,6 +6,7 @@ import ProductsPage from './pages/ProductsPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import ContactPage from './pages/ContactPage';
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
 import WishlistPage from './pages/WishlistPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
@@ -32,6 +33,7 @@ function App() {
                     <Route path="products/:id" element={<ProductDetailsPage />} />
                     <Route path="contact" element={<ContactPage />} />
                     <Route path="cart" element={<CartPage />} />
+                    <Route path="checkout" element={<CheckoutPage />} />
                     <Route path="wishlist" element={<WishlistPage />} />
                     <Route path="auth" element={<AuthPage />} />
                     <Route path="profile" element={<ProfilePage />} />

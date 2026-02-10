@@ -116,6 +116,13 @@ const ProductDetailsPage = () => {
     }, [id]);
 
     const handleAddToCart = async () => {
+        // Check if user is logged in first
+        if (!isLoggedIn) {
+            alert('Please login to add items to cart');
+            navigate('/auth');
+            return;
+        }
+
         if (!product) return;
         
         // Check stock based on sizes
@@ -147,6 +154,13 @@ const ProductDetailsPage = () => {
     };
 
     const handleAddToWishlist = async () => {
+        // Check if user is logged in first
+        if (!isLoggedIn) {
+            alert('Please login to add items to wishlist');
+            navigate('/auth');
+            return;
+        }
+
         if (!product) return;
         if (inWishlist) {
             const response = await wishlistApi.remove(product.id);
@@ -162,8 +176,35 @@ const ProductDetailsPage = () => {
     };
 
     const handleBuyNow = async () => {
-        await handleAddToCart();
-        navigate('/cart');
+        if (!product) return;
+        
+        // Check stock based on sizes
+        if (product.sizes_enabled) {
+            if (!selectedSize) {
+                alert('Please select a size');
+                return;
+            }
+            const selectedSizeData = productSizes.find(s => s.size_name === selectedSize);
+            if (!selectedSizeData || selectedSizeData.quantity === 0) {
+                alert('Selected size is out of stock');
+                return;
+            }
+        } else {
+            if (product.quantity === 0) {
+                alert('Product is out of stock');
+                return;
+            }
+        }
+
+        // For Buy Now, store product in session storage for direct checkout
+        sessionStorage.setItem('buyNowProduct', JSON.stringify({
+            product_id: product.id,
+            product: product,
+            quantity: 1,
+            size: selectedSize
+        }));
+        
+        navigate('/checkout');
     };
 
     const handleSubmitReview = async () => {
