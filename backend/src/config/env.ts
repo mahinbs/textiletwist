@@ -1,4 +1,4 @@
-jimport { config } from 'dotenv';
+import { config } from 'dotenv';
 
 // Load environment variables immediately
 config();
