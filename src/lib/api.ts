@@ -69,8 +69,9 @@ async function apiRequest<T>(
     const data = await response.json();
 
     if (!response.ok) {
-      // If 401, clear token
-      if (response.status === 401) {
+      // Only clear token on 401 if it's explicitly an auth endpoint error
+      // Don't auto-logout on every 401 (user might just not be logged in)
+      if (response.status === 401 && endpoint.includes('/auth/')) {
         clearAuthToken();
       }
       return { error: data.error || 'An error occurred' };
@@ -108,7 +109,8 @@ async function uploadRequest<T>(
     const data = await response.json();
 
     if (!response.ok) {
-      if (response.status === 401) {
+      // Only clear token on 401 if it's explicitly an auth endpoint error
+      if (response.status === 401 && endpoint.includes('/auth/')) {
         clearAuthToken();
       }
       return { error: data.error || 'An error occurred' };
