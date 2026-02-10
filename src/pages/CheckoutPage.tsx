@@ -99,24 +99,28 @@ const CheckoutPage = () => {
         if (response.error) {
             alert(response.error);
             setCheckingOut(false);
-        } else {
-            // Clear buyNow product from session storage
-            sessionStorage.removeItem('buyNowProduct');
-            
-            // Redirect to order confirmation page with order ID
-            const orderId = response.data?.order?.id;
-            console.log('Order ID from response:', orderId);
-            console.log('Full order data:', response.data);
-            
-            if (orderId) {
-                console.log('Navigating to confirmation page with order ID:', orderId);
-                navigate(`/order-confirmation?order_id=${orderId}`);
-            } else {
-                console.log('No order ID found, showing alert');
-                alert('Order placed successfully! Order Number: ' + (response.data?.order?.order_number || 'N/A'));
-                navigate('/');
-            }
+            return;
         }
+        
+        // Clear buyNow product from session storage
+        sessionStorage.removeItem('buyNowProduct');
+        
+        // Extract order data - backend returns { data: { order: {...}, message: "..." } }
+        const order = response.data?.order;
+        console.log('Order object:', order);
+        
+        if (order && order.id) {
+            console.log('Navigating to confirmation page with order ID:', order.id);
+            // Use navigate with replace to avoid back button issues
+            navigate(`/order-confirmation?order_id=${order.id}`, { replace: true });
+        } else {
+            // Fallback: show alert with order number if we have it
+            const orderNumber = order?.order_number || response.data?.order_number;
+            console.log('No order ID, showing alert. Order number:', orderNumber);
+            alert(`Order placed successfully!${orderNumber ? ' Order Number: ' + orderNumber : ''}`);
+            navigate('/', { replace: true });
+        }
+        
         setCheckingOut(false);
     };
 
