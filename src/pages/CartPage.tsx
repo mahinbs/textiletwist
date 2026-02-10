@@ -57,16 +57,35 @@ const CartPage = () => {
         setCheckingOut(true);
 
         // Prepare order data
-        const orderData = {
+        const orderData: any = {
             cart_items: cartItems.map(item => ({
                 product_id: item.product_id,
                 quantity: item.quantity,
                 size: item.size || null,
                 product: item.product,
             })),
-            ...formData,
+            customer_name: formData.customer_name,
+            customer_email: formData.customer_email,
+            customer_phone: formData.customer_phone,
+            shipping_address: formData.shipping_address,
+            shipping_city: formData.shipping_city,
+            shipping_state: formData.shipping_state,
+            shipping_postal_code: formData.shipping_postal_code,
+            shipping_country: formData.shipping_country,
+            payment_method: formData.payment_method,
             shipping_cost: subtotal > 5000 ? 0 : 500,
         };
+
+        // Add Razorpay payment details if present
+        if (formData.razorpay_order_id) {
+            orderData.razorpay_order_id = formData.razorpay_order_id;
+        }
+        if (formData.razorpay_payment_id) {
+            orderData.razorpay_payment_id = formData.razorpay_payment_id;
+        }
+        if (formData.razorpay_signature) {
+            orderData.razorpay_signature = formData.razorpay_signature;
+        }
 
         const response = await ordersApi.create(orderData);
         if (response.error) {
@@ -74,9 +93,11 @@ const CartPage = () => {
             setCheckingOut(false);
         } else {
             setShowCheckoutForm(false);
-            alert('Order placed successfully!');
+            const paymentStatus = formData.payment_method === 'online' ? 'Payment successful!' : 'Order placed successfully!';
+            alert(paymentStatus + ' You can track your order in your profile.');
             navigate('/profile');
         }
+        setCheckingOut(false);
     };
 
     if (loading) {

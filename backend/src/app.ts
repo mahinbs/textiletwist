@@ -15,6 +15,7 @@ import notificationRoutes from './notifications/routes.js';
 import reviewRoutes from './reviews/routes.js';
 import productSizesRoutes from './product-sizes/routes.js';
 import productDetailsRoutes from './product-details/routes.js';
+import paymentRoutes from './payment/routes.js';
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use('/notifications', notificationRoutes);
 app.use('/reviews', reviewRoutes);
 app.use('/product-sizes', productSizesRoutes);
 app.use('/product-details', productDetailsRoutes);
+app.use('/payment', paymentRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

@@ -253,28 +253,42 @@ router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void
 
     // Create order
     const orderNumber = generateOrderNumber();
+    const orderData: any = {
+      order_number: orderNumber,
+      user_id: req.user?.id || null,
+      status: 'pending',
+      customer_name,
+      customer_email,
+      customer_phone,
+      shipping_address,
+      shipping_city: shipping_city || null,
+      shipping_state: shipping_state || null,
+      shipping_postal_code: shipping_postal_code || null,
+      shipping_country: shipping_country || 'India',
+      subtotal,
+      discount_amount: discountAmount,
+      coupon_id: couponId,
+      shipping_cost: shipping,
+      total_amount: totalAmount,
+      payment_method: payment_method || 'cod',
+      payment_status: payment_method === 'cod' ? 'pending' : 'pending',
+    };
+
+    // Add Razorpay fields if present
+    if (req.body.razorpay_order_id) {
+      orderData.razorpay_order_id = req.body.razorpay_order_id;
+    }
+    if (req.body.razorpay_payment_id) {
+      orderData.razorpay_payment_id = req.body.razorpay_payment_id;
+      orderData.payment_status = 'paid';
+    }
+    if (req.body.razorpay_signature) {
+      orderData.razorpay_signature = req.body.razorpay_signature;
+    }
+
     const { data: order, error: orderError } = await supabaseAdmin!
       .from('orders')
-      .insert({
-        order_number: orderNumber,
-        user_id: req.user?.id || null,
-        status: 'pending',
-        customer_name,
-        customer_email,
-        customer_phone,
-        shipping_address,
-        shipping_city: shipping_city || null,
-        shipping_state: shipping_state || null,
-        shipping_postal_code: shipping_postal_code || null,
-        shipping_country: shipping_country || 'India',
-        subtotal,
-        discount_amount: discountAmount,
-        coupon_id: couponId,
-        shipping_cost: shipping,
-        total_amount: totalAmount,
-        payment_method: payment_method || null,
-        payment_status: 'pending',
-      })
+      .insert(orderData)
       .select()
       .single();
 
