@@ -463,3 +463,24 @@ export const productDetailsApi = {
     });
   },
 };
+
+// Payment API
+export const paymentApi = {
+  createOrder: async (amount: number, currency: string = 'INR', receipt?: string, notes?: any) => {
+    return apiRequest<{ success: boolean; order: any; key_id: string }>('/payment/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ amount, currency, receipt, notes }),
+    });
+  },
+
+  verify: async (razorpay_order_id: string, razorpay_payment_id: string, razorpay_signature: string, order_id?: string) => {
+    return apiRequest<{ success: boolean; verified: boolean; message: string }>('/payment/verify', {
+      method: 'POST',
+      body: JSON.stringify({ razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id }),
+    });
+  },
+
+  getPaymentStatus: async (payment_id: string) => {
+    return apiRequest<{ success: boolean; payment: any }>(`/payment/status/${payment_id}`);
+  },
+};

@@ -1,6 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, MapPin, User, CreditCard, Truck } from 'lucide-react';
+import { paymentApi } from '../../lib/api';
+
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
 
 interface CheckoutFormProps {
     cartItems: any[];
@@ -23,6 +30,9 @@ export interface CheckoutFormData {
     shipping_postal_code: string;
     shipping_country: string;
     payment_method: string;
+    razorpay_order_id?: string;
+    razorpay_payment_id?: string;
+    razorpay_signature?: string;
 }
 
 const CheckoutForm = ({ cartItems, subtotal, shipping, tax, total, onCheckout, onCancel, isSubmitting }: CheckoutFormProps) => {
@@ -39,6 +49,17 @@ const CheckoutForm = ({ cartItems, subtotal, shipping, tax, total, onCheckout, o
     });
 
     const [errors, setErrors] = useState<Partial<Record<keyof CheckoutFormData, string>>>({});
+
+    // Load Razorpay script
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
 
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof CheckoutFormData, string>> = {};
@@ -81,9 +102,100 @@ const CheckoutForm = ({ cartItems, subtotal, shipping, tax, total, onCheckout, o
         return Object.keys(newErrors).length === 0;
     };
 
+    const handleRazorpayPayment = async () => {
+        try {
+            // Create Razorpay order
+            const orderResponse = await paymentApi.createOrder(
+                total,
+                'INR',
+                `order_${Date.now()}`,
+                {
+                    customer_name: formData.customer_name,
+                    customer_email: formData.customer_email,
+                }
+            );
+
+            if (orderResponse.error || !orderResponse.data) {
+                throw new Error(orderResponse.error || 'Failed to create payment order');
+            }
+
+            const { order, key_id } = orderResponse.data;
+
+            // Configure Razorpay options
+            const options = {
+                key: key_id,
+                amount: order.amount,
+                currency: order.currency,
+                name: 'Textile Twist',
+                description: 'Order Payment',
+                order_id: order.id,
+                handler: async function (response: any) {
+                    try {
+                        // Verify payment
+                        const verifyResponse = await paymentApi.verify(
+                            response.razorpay_order_id,
+                            response.razorpay_payment_id,
+                            response.razorpay_signature
+                        );
+
+                        if (verifyResponse.error || !verifyResponse.data?.verified) {
+                            throw new Error('Payment verification failed');
+                        }
+
+                        // Payment successful, submit order
+                        const orderData = {
+                            ...formData,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                        };
+
+                        await onCheckout(orderData);
+                    } catch (error: any) {
+                        console.error('Payment handler error:', error);
+                        alert(error.message || 'Payment processing failed');
+                    }
+                },
+                prefill: {
+                    name: formData.customer_name,
+                    email: formData.customer_email,
+                    contact: formData.customer_phone,
+                },
+                notes: {
+                    address: formData.shipping_address,
+                    city: formData.shipping_city,
+                    state: formData.shipping_state,
+                },
+                theme: {
+                    color: '#8B4513',
+                },
+                modal: {
+                    ondismiss: function () {
+                        console.log('Payment cancelled');
+                    },
+                },
+            };
+
+            // Open Razorpay checkout
+            const razorpay = new window.Razorpay(options);
+            razorpay.open();
+        } catch (error: any) {
+            console.error('Razorpay payment error:', error);
+            alert(error.message || 'Failed to initiate payment');
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (validate()) {
+        if (!validate()) {
+            return;
+        }
+
+        if (formData.payment_method === 'online') {
+            // Handle Razorpay payment
+            await handleRazorpayPayment();
+        } else {
+            // Handle COD
             await onCheckout(formData);
         }
     };
@@ -356,7 +468,7 @@ const CheckoutForm = ({ cartItems, subtotal, shipping, tax, total, onCheckout, o
                                     </>
                                 ) : (
                                     <>
-                                        Place Order
+                                        {formData.payment_method === 'online' ? 'Pay Now' : 'Place Order'}
                                     </>
                                 )}
                             </button>
@@ -369,4 +481,3 @@ const CheckoutForm = ({ cartItems, subtotal, shipping, tax, total, onCheckout, o
 };
 
 export default CheckoutForm;
-
