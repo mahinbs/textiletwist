@@ -24,23 +24,55 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+// Token management
+const getAuthToken = (): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('auth_token');
+  }
+  return null;
+};
+
+const setAuthToken = (token: string) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('auth_token', token);
+  }
+};
+
+const clearAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('auth_token');
+  }
+};
+
 async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   try {
+    const token = getAuthToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...options.headers as Record<string, string>,
+    };
+    
+    // Add Authorization header if token exists
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
     });
 
     const data = await response.json();
 
     if (!response.ok) {
+      // If 401, clear token
+      if (response.status === 401) {
+        clearAuthToken();
+      }
       return { error: data.error || 'An error occurred' };
     }
 
@@ -57,9 +89,18 @@ async function uploadRequest<T>(
   formData: FormData
 ): Promise<ApiResponse<T>> {
   try {
+    const token = getAuthToken();
+    const headers: Record<string, string> = {};
+    
+    // Add Authorization header if token exists
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       credentials: 'include',
+      headers,
       body: formData,
       // Don't set Content-Type header - browser will set it with boundary for multipart/form-data
     });
@@ -67,6 +108,9 @@ async function uploadRequest<T>(
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401) {
+        clearAuthToken();
+      }
       return { error: data.error || 'An error occurred' };
     }
 
@@ -311,23 +355,40 @@ export const enquiriesApi = {
 // Auth API
 export const authApi = {
   signup: async (email: string, password: string, fullName?: string) => {
-    return apiRequest<{ user: any }>('/auth/signup', {
+    const response = await apiRequest<{ user: any; access_token?: string }>('/auth/signup', {
       method: 'POST',
       body: JSON.stringify({ email, password, fullName }),
     });
+    
+    // Save token if present
+    if (response.data?.access_token) {
+      setAuthToken(response.data.access_token);
+    }
+    
+    return response;
   },
 
   login: async (email: string, password: string) => {
-    return apiRequest<{ user: any }>('/auth/login', {
+    const response = await apiRequest<{ user: any; access_token?: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+    
+    // Save token if present
+    if (response.data?.access_token) {
+      setAuthToken(response.data.access_token);
+    }
+    
+    return response;
   },
 
   logout: async () => {
-    return apiRequest('/auth/logout', {
+    const response = await apiRequest('/auth/logout', {
       method: 'POST',
     });
+    // Clear token on logout
+    clearAuthToken();
+    return response;
   },
 
   getCurrentUser: async () => {

@@ -66,6 +66,7 @@ router.post('/signup', async (req: Request, res: Response): Promise<void> => {
         email: data.user.email,
         full_name: data.user.user_metadata?.full_name,
       },
+      access_token: data.session.access_token, // Also return token in body for cross-domain
     });
     return;
   } catch (error) {
@@ -124,6 +125,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
         full_name: data.user.user_metadata?.full_name,
         role: profile?.role || 'user',
       },
+      access_token: data.session.access_token, // Also return token in body for cross-domain
     });
     return;
   } catch (error) {
