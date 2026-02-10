@@ -12,19 +12,27 @@ const OrderConfirmationPage = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        console.log('OrderConfirmationPage loaded with orderId:', orderId);
+        
         if (!orderId) {
+            console.log('No order ID found, redirecting to home');
             navigate('/');
             return;
         }
 
         const fetchOrder = async () => {
             setLoading(true);
+            console.log('Fetching order with ID:', orderId);
             const response = await ordersApi.getById(orderId);
+            console.log('Order fetch response:', response);
+            
             if (response.data) {
                 setOrder(response.data.order);
+                console.log('Order set successfully:', response.data.order);
             } else {
+                console.log('Failed to fetch order, showing processing message');
                 // If can't fetch order, still show success message
-                setOrder({ order_number: 'Processing...' });
+                setOrder({ order_number: 'Processing...', status: 'pending' });
             }
             setLoading(false);
         };

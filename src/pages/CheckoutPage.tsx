@@ -94,6 +94,8 @@ const CheckoutPage = () => {
         }
 
         const response = await ordersApi.create(orderData);
+        console.log('Order creation response:', response);
+        
         if (response.error) {
             alert(response.error);
             setCheckingOut(false);
@@ -103,10 +105,15 @@ const CheckoutPage = () => {
             
             // Redirect to order confirmation page with order ID
             const orderId = response.data?.order?.id;
+            console.log('Order ID from response:', orderId);
+            console.log('Full order data:', response.data);
+            
             if (orderId) {
+                console.log('Navigating to confirmation page with order ID:', orderId);
                 navigate(`/order-confirmation?order_id=${orderId}`);
             } else {
-                alert('Order placed successfully! Thank you for your order!');
+                console.log('No order ID found, showing alert');
+                alert('Order placed successfully! Order Number: ' + (response.data?.order?.order_number || 'N/A'));
                 navigate('/');
             }
         }

@@ -52,6 +52,48 @@ router.get('/', optionalAuth, async (req: Request, res: Response): Promise<void>
 });
 
 /**
+ * GET /orders/track/:orderNumber
+ * Track order by order number (public - no auth required)
+ */
+router.get('/track/:orderNumber', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { orderNumber } = req.params;
+    const { email } = req.query;
+
+    if (!orderNumber) {
+      res.status(400).json({ error: 'Order number is required' });
+      return;
+    }
+
+    let query = supabaseAdmin!
+      .from('orders')
+      .select(`
+        *,
+        order_items(*),
+        coupon:coupons(code, name)
+      `)
+      .eq('order_number', orderNumber.toUpperCase());
+
+    // If email provided, verify it matches
+    if (email) {
+      query = query.eq('customer_email', email);
+    }
+
+    const { data, error } = await query.single();
+
+    if (error || !data) {
+      res.status(404).json({ error: 'Order not found' });
+      return;
+    }
+
+    res.status(200).json({ order: data });
+  } catch (error) {
+    console.error('Track order error:', error);
+    res.status(500).json({ error: 'Failed to track order' });
+  }
+});
+
+/**
  * GET /orders/:id
  * Get single order by ID
  */

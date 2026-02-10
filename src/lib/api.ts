@@ -295,6 +295,11 @@ export const ordersApi = {
     return apiRequest<{ order: any }>(`/orders/${id}`);
   },
 
+  trackByNumber: async (orderNumber: string, email?: string) => {
+    const params = email ? `?email=${encodeURIComponent(email)}` : '';
+    return apiRequest<{ order: any }>(`/orders/track/${orderNumber}${params}`);
+  },
+
   create: async (orderData: any) => {
     return apiRequest<{ order: any }>('/orders', {
       method: 'POST',

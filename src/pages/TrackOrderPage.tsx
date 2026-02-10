@@ -22,26 +22,13 @@ const TrackOrderPage = () => {
 
         setLoading(true);
 
-        // Fetch all orders and find by order number
-        const response = await ordersApi.getAll();
+        // Track order by order number (public API - no auth required)
+        const response = await ordersApi.trackByNumber(orderNumber.trim(), email.trim() || undefined);
         
-        if (response.data) {
-            const foundOrder = response.data.orders.find(
-                (o: any) => o.order_number.toLowerCase() === orderNumber.trim().toLowerCase()
-            );
-
-            if (foundOrder) {
-                // Verify email if provided
-                if (email && foundOrder.customer_email.toLowerCase() !== email.trim().toLowerCase()) {
-                    setError('Order number and email do not match');
-                } else {
-                    setOrder(foundOrder);
-                }
-            } else {
-                setError('Order not found. Please check your order number.');
-            }
+        if (response.data && response.data.order) {
+            setOrder(response.data.order);
         } else {
-            setError(response.error || 'Failed to fetch order');
+            setError(response.error || 'Order not found. Please check your order number and email.');
         }
 
         setLoading(false);
