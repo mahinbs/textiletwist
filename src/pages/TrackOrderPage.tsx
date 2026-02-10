@@ -160,7 +160,7 @@ const TrackOrderPage = () => {
 
                             {/* Status Timeline */}
                             <div className="relative">
-                                {getStatusSteps(order.status).map((step, index) => (
+                                {getStatusSteps(order.status).map((step) => (
                                     <div key={step.key} className="flex items-center mb-4 last:mb-0">
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                                             step.completed ? 'bg-green-500' : 'bg-gray-300'

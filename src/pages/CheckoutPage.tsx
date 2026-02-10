@@ -115,7 +115,7 @@ const CheckoutPage = () => {
             navigate(`/order-confirmation?order_id=${order.id}`, { replace: true });
         } else {
             // Fallback: show alert with order number if we have it
-            const orderNumber = order?.order_number || response.data?.order_number;
+            const orderNumber = order?.order_number;
             console.log('No order ID, showing alert. Order number:', orderNumber);
             alert(`Order placed successfully!${orderNumber ? ' Order Number: ' + orderNumber : ''}`);
             navigate('/', { replace: true });
