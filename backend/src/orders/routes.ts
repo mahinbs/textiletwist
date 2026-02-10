@@ -23,7 +23,15 @@ router.get('/', optionalAuth, async (req: Request, res: Response): Promise<void>
       res.status(401).json({ error: 'Authentication required' }); return;
     }
 
-    const isAdmin = !!req.user; // In real app, check admin role
+    // Check if user is actually admin
+    const { data: userProfile } = await supabaseAdmin!
+      .from('user_profiles')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
+    
+    const isAdmin = userProfile?.role === 'admin';
+    
     let query = supabaseAdmin!
       .from('orders')
       .select(`
@@ -34,9 +42,10 @@ router.get('/', optionalAuth, async (req: Request, res: Response): Promise<void>
       .order('created_at', { ascending: false });
 
     if (!isAdmin) {
-      // Users can only see their own orders
+      // Regular users can only see their own orders (where user_id matches)
       query = query.eq('user_id', req.user.id);
     }
+    // Admins see all orders (no filter)
 
     const { data, error } = await query;
 
