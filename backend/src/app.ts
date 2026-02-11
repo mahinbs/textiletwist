@@ -26,14 +26,17 @@ app.use(cookieParser());
 
 // CORS configuration - allow frontend origin with credentials
 // Support multiple origins (comma-separated in FRONTEND_URL)
-const allowedOrigins = env.FRONTEND_URL.split(',').map(url => url.trim());
+const allowedOrigins = env.FRONTEND_URL.split(',').map((url) => url.trim());
 
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       // Allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
-      
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
