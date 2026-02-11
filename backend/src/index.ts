@@ -22,52 +22,56 @@ app.listen(PORT, () => {
   console.log(`✅ Server running on ${PORT}`);
   console.log(`📊 Environment: ${env.NODE_ENV}`);
   console.log(`🔗 Supabase URL: ${env.SUPABASE_URL}`);
-  
+
   // Self-ping mechanism to keep Render service alive
-  // Pings the health endpoint every 30 seconds
-  const startSelfPing = () => {
-    const pingInterval = 30000; // 30 seconds
-    const healthUrl = new URL('/health', env.BACKEND_URL);
-    
-    const pingSelf = () => {
-      const options = {
-        hostname: healthUrl.hostname,
-        port: healthUrl.port || (healthUrl.protocol === 'https:' ? 443 : 80),
-        path: healthUrl.pathname,
-        method: 'GET',
-        timeout: 5000,
+  // Only enable in production so local dev doesn't spam timeouts
+  if (env.NODE_ENV === 'production') {
+    const startSelfPing = () => {
+      const pingInterval = 30000; // 30 seconds
+      const healthUrl = new URL('/health', env.BACKEND_URL);
+      
+      const pingSelf = () => {
+        const options = {
+          hostname: healthUrl.hostname,
+          port: healthUrl.port || (healthUrl.protocol === 'https:' ? 443 : 80),
+          path: healthUrl.pathname,
+          method: 'GET',
+          timeout: 5000,
+        };
+        
+        // Use https module if URL is https
+        const httpModule = healthUrl.protocol === 'https:' ? https : http;
+        
+        const req = httpModule.request(options, (res: http.IncomingMessage) => {
+          if (res.statusCode === 200) {
+            console.log(`🔄 Self-ping successful at ${new Date().toISOString()}`);
+          } else {
+            console.warn(`⚠️ Self-ping returned status ${res.statusCode}`);
+          }
+        });
+        
+        req.on('error', (error: Error) => {
+          console.error('❌ Self-ping failed:', error.message);
+        });
+        
+        req.on('timeout', () => {
+          req.destroy();
+          console.warn('⚠️ Self-ping timeout');
+        });
+        
+        req.end();
       };
       
-      // Use https module if URL is https
-      const httpModule = healthUrl.protocol === 'https:' ? https : http;
+      // Start pinging immediately, then every 30 seconds
+      pingSelf();
+      setInterval(pingSelf, pingInterval);
       
-      const req = httpModule.request(options, (res: http.IncomingMessage) => {
-        if (res.statusCode === 200) {
-          console.log(`🔄 Self-ping successful at ${new Date().toISOString()}`);
-        } else {
-          console.warn(`⚠️ Self-ping returned status ${res.statusCode}`);
-        }
-      });
-      
-      req.on('error', (error: Error) => {
-        console.error('❌ Self-ping failed:', error.message);
-      });
-      
-      req.on('timeout', () => {
-        req.destroy();
-        console.warn('⚠️ Self-ping timeout');
-      });
-      
-      req.end();
+      console.log(`🔄 Self-ping enabled (every ${pingInterval / 1000} seconds) - URL: ${healthUrl.toString()}`);
     };
     
-    // Start pinging immediately, then every 30 seconds
-    pingSelf();
-    setInterval(pingSelf, pingInterval);
-    
-    console.log(`🔄 Self-ping enabled (every ${pingInterval / 1000} seconds) - URL: ${healthUrl.toString()}`);
-  };
-  
-  startSelfPing();
+    startSelfPing();
+  } else {
+    console.log('ℹ️ Self-ping disabled in non-production environment');
+  }
 });
 

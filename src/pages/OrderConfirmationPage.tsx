@@ -8,22 +8,37 @@ const OrderConfirmationPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const orderId = searchParams.get('order_id');
+    const orderNumber = searchParams.get('order_number');
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        console.log('OrderConfirmationPage loaded with orderId:', orderId);
+        console.log('OrderConfirmationPage loaded with orderId:', orderId, 'orderNumber:', orderNumber);
         
-        if (!orderId) {
-            console.log('No order ID found, redirecting to home');
+        if (!orderId && !orderNumber) {
+            console.log('No order ID or order number found, redirecting to home');
             navigate('/');
             return;
         }
 
         const fetchOrder = async () => {
             setLoading(true);
-            console.log('Fetching order with ID:', orderId);
-            const response = await ordersApi.getById(orderId);
+            try {
+                let response;
+
+                if (orderNumber) {
+                    console.log('Fetching order by number (public endpoint):', orderNumber);
+                    response = await ordersApi.trackByNumber(orderNumber);
+                } else if (orderId) {
+                    console.log('Fetching order with ID (auth endpoint):', orderId);
+                    response = await ordersApi.getById(orderId);
+                } else {
+                    console.log('No identifier available for order fetch');
+                    setOrder({ order_number: 'Processing...', status: 'pending' });
+                    setLoading(false);
+                    return;
+                }
+
             console.log('Order fetch response:', response);
             
             if (response.data) {
@@ -34,11 +49,15 @@ const OrderConfirmationPage = () => {
                 // If can't fetch order, still show success message
                 setOrder({ order_number: 'Processing...', status: 'pending' });
             }
+            } catch (error) {
+                console.error('Order fetch error:', error);
+                setOrder({ order_number: 'Processing...', status: 'pending' });
+            }
             setLoading(false);
         };
 
         fetchOrder();
-    }, [orderId, navigate]);
+    }, [orderId, orderNumber, navigate]);
 
     const getStatusIcon = (status: string) => {
         switch (status) {

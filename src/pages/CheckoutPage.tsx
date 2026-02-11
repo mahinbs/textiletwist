@@ -112,7 +112,14 @@ const CheckoutPage = () => {
         if (order && order.id) {
             console.log('Navigating to confirmation page with order ID:', order.id);
             // Use navigate with replace to avoid back button issues
-            navigate(`/order-confirmation?order_id=${order.id}`, { replace: true });
+            const orderNumber = order.order_number || '';
+            const query = new URLSearchParams({
+                order_id: order.id,
+            });
+            if (orderNumber) {
+                query.set('order_number', orderNumber);
+            }
+            navigate(`/order-confirmation?${query.toString()}`, { replace: true });
         } else {
             // Fallback: show alert with order number if we have it
             const orderNumber = order?.order_number;

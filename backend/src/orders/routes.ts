@@ -114,6 +114,13 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response): Promise<vo
 
     const { id } = req.params;
 
+    // Load user profile to determine role
+    const { data: userProfile } = await supabaseAdmin!
+      .from('user_profiles')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
+
     const { data, error } = await supabaseAdmin!
       .from('orders')
       .select(`
@@ -129,7 +136,7 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response): Promise<vo
     }
 
     // Check if user owns this order or is admin
-    const isAdmin = !!req.user; // In real app, check admin role
+    const isAdmin = userProfile?.role === 'admin';
     if (!isAdmin && data.user_id !== req.user.id) {
       res.status(403).json({ error: 'Access denied' }); return;
     }

@@ -4,11 +4,19 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { categoriesApi } from '../../lib/api';
 
+// Check if user is logged in
+const isUserLoggedIn = () => {
+    if (typeof window === 'undefined') return false;
+    return !!localStorage.getItem('auth_token');
+};
+
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
     const [categories, setCategories] = useState<any[]>([]);
+    const [cartCount, setCartCount] = useState(0);
+    const [wishlistCount, setWishlistCount] = useState(0);
     const location = useLocation();
     const navRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +38,36 @@ const Navbar = () => {
         };
         fetchCategories();
     }, []);
+
+    // Fetch cart and wishlist counts
+    useEffect(() => {
+        const fetchCounts = async () => {
+            if (isUserLoggedIn()) {
+                // Import cart and wishlist APIs
+                const { cartApi, wishlistApi } = await import('../../lib/api');
+                
+                const [cartResponse, wishlistResponse] = await Promise.all([
+                    cartApi.getAll(),
+                    wishlistApi.getAll()
+                ]);
+                
+                if (cartResponse.data) {
+                    setCartCount(cartResponse.data.cart?.length || 0);
+                }
+                if (wishlistResponse.data) {
+                    setWishlistCount(wishlistResponse.data.wishlist?.length || 0);
+                }
+            } else {
+                setCartCount(0);
+                setWishlistCount(0);
+            }
+        };
+        fetchCounts();
+        
+        // Refetch when location changes (user adds items, navigates, etc.)
+        const interval = setInterval(fetchCounts, 2000); // Check every 2 seconds
+        return () => clearInterval(interval);
+    }, [location]);
 
     // Close mobile menu when route changes
     useEffect(() => {
@@ -186,14 +224,24 @@ const Navbar = () => {
 
                     <Link to="/wishlist" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative hidden sm:block`} title="Wishlist">
                         <Heart className="w-6 h-6" />
+                        {wishlistCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-secondary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                                {wishlistCount}
+                            </span>
+                        )}
                     </Link>
 
-                    <Link to="/auth" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative`} title="Account">
+                    <Link to={isUserLoggedIn() ? "/profile" : "/auth"} className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative`} title="Account">
                         <User className="w-6 h-6" />
                     </Link>
 
                     <Link to="/cart" className={`${scrolled ? 'text-white' : 'text-secondary'} hover:text-secondary transition-colors relative`} title="Cart">
                         <ShoppingBag className="w-6 h-6" />
+                        {cartCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-secondary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                                {cartCount}
+                            </span>
+                        )}
                     </Link>
 
                     <button

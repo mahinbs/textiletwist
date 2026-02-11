@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Star, ShoppingCart, Truck, Shield, Loader2, Heart, MessageSquare } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { productsApi, cartApi, wishlistApi, reviewsApi, authApi, productSizesApi, productDetailsApi } from '../lib/api';
 
 const ProductDetailsPage = () => {
@@ -118,7 +119,7 @@ const ProductDetailsPage = () => {
     const handleAddToCart = async () => {
         // Check if user is logged in first
         if (!isLoggedIn) {
-            alert('Please login to add items to cart');
+            toast.error('Please login to add items to cart');
             navigate('/auth');
             return;
         }
@@ -146,9 +147,9 @@ const ProductDetailsPage = () => {
         setAddingToCart(true);
         const response = await cartApi.add(product.id, 1, selectedSize || undefined);
         if (response.error) {
-            alert(response.error);
+            toast.error(response.error);
         } else {
-            alert('Added to cart!');
+            toast.success('Added to cart!');
         }
         setAddingToCart(false);
     };
@@ -156,7 +157,7 @@ const ProductDetailsPage = () => {
     const handleAddToWishlist = async () => {
         // Check if user is logged in first
         if (!isLoggedIn) {
-            alert('Please login to add items to wishlist');
+            toast.error('Please login to add items to wishlist');
             navigate('/auth');
             return;
         }
@@ -209,22 +210,22 @@ const ProductDetailsPage = () => {
 
     const handleSubmitReview = async () => {
         if (!id || !isLoggedIn) {
-            alert('Please login to leave a review');
+            toast.error('Please login to leave a review');
             navigate('/auth');
             return;
         }
 
         if (!reviewRating) {
-            alert('Please select a rating');
+            toast.error('Please select a rating');
             return;
         }
 
         setSubmittingReview(true);
         const response = await reviewsApi.create(id, reviewRating, reviewComment);
         if (response.error) {
-            alert(response.error);
+            toast.error(response.error);
         } else {
-            alert('Review submitted successfully!');
+            toast.success('Review submitted successfully!');
             setShowReviewForm(false);
             // Refresh reviews
             const reviewsResponse = await reviewsApi.getByProduct(id);
