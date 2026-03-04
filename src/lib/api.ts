@@ -328,13 +328,18 @@ export const settingsApi = {
 
   // Admin shipping settings
   getShippingAdmin: async () => {
-    return apiRequest<{ settings: { shipping_enabled: boolean; shipping_flat_fee: number; shipping_free_threshold: number } }>(
-      '/admin/settings/shipping'
-    );
+    // Admin-only endpoint, but URL is under /settings (backend mounts settingsRoutes at /settings)
+    return apiRequest<{
+      settings: {
+        shipping_enabled: boolean;
+        shipping_flat_fee: number;
+        shipping_free_threshold: number;
+      };
+    }>('/settings/shipping');
   },
 
   updateShippingAdmin: async (settings: { shipping_enabled: boolean; shipping_flat_fee: number; shipping_free_threshold: number }) => {
-    return apiRequest<{ settings: any }>('/admin/settings/shipping', {
+    return apiRequest<{ settings: any }>('/settings/shipping', {
       method: 'PUT',
       body: JSON.stringify(settings),
     });
