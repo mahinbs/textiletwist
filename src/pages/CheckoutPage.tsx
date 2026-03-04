@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { ordersApi, cartApi } from '../lib/api';
+import { ordersApi, cartApi, settingsApi } from '../lib/api';
 import CheckoutForm, { type CheckoutFormData } from '../components/checkout/CheckoutForm';
 
 const CheckoutPage = () => {
@@ -9,6 +9,12 @@ const CheckoutPage = () => {
     const [cartItems, setCartItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [checkingOut, setCheckingOut] = useState(false);
+    const [shippingConfig, setShippingConfig] = useState<{
+        shipping_enabled: boolean;
+        shipping_flat_fee: number;
+        shipping_free_threshold: number;
+    } | null>(null);
+    const [loadingShipping, setLoadingShipping] = useState(true);
 
     useEffect(() => {
         // Check if there's a buyNow product in session storage
@@ -29,6 +35,26 @@ const CheckoutPage = () => {
             fetchCart();
         }
     }, [navigate]);
+
+    // Load shipping settings (public, does not require auth)
+    useEffect(() => {
+        const fetchShipping = async () => {
+            setLoadingShipping(true);
+            const response = await settingsApi.getShippingPublic();
+            if (response.data?.settings) {
+                setShippingConfig(response.data.settings);
+            } else {
+                // Fallback defaults
+                setShippingConfig({
+                    shipping_enabled: true,
+                    shipping_flat_fee: 500,
+                    shipping_free_threshold: 5000,
+                });
+            }
+            setLoadingShipping(false);
+        };
+        fetchShipping();
+    }, []);
 
     const fetchCart = async () => {
         setLoading(true);
@@ -79,7 +105,15 @@ const CheckoutPage = () => {
             shipping_postal_code: formData.shipping_postal_code,
             shipping_country: formData.shipping_country,
             payment_method: formData.payment_method,
-            shipping_cost: subtotal > 5000 ? 0 : 500,
+            shipping_cost: (() => {
+                const config = shippingConfig || {
+                    shipping_enabled: true,
+                    shipping_flat_fee: 500,
+                    shipping_free_threshold: 5000,
+                };
+                if (!config.shipping_enabled) return 0;
+                return subtotal >= config.shipping_free_threshold ? 0 : config.shipping_flat_fee;
+            })(),
         };
 
         // Add Razorpay payment details if present
@@ -131,7 +165,7 @@ const CheckoutPage = () => {
         setCheckingOut(false);
     };
 
-    if (loading) {
+    if (loading || loadingShipping) {
         return (
             <div className="min-h-screen pt-32 pb-20 px-4 md:px-8 bg-gray-50 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -146,7 +180,16 @@ const CheckoutPage = () => {
         return sum + (price * item.quantity);
     }, 0);
 
-    const shipping = subtotal > 5000 ? 0 : 500;
+    const config = shippingConfig || {
+        shipping_enabled: true,
+        shipping_flat_fee: 500,
+        shipping_free_threshold: 5000,
+    };
+
+    let shipping = 0;
+    if (config.shipping_enabled) {
+        shipping = subtotal >= config.shipping_free_threshold ? 0 : config.shipping_flat_fee;
+    }
     const tax = Math.round(subtotal * 0.18);
     const total = subtotal + shipping + tax;
 

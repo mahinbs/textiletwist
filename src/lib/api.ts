@@ -317,6 +317,30 @@ export const ordersApi = {
   },
 };
 
+// Store / Settings API
+export const settingsApi = {
+  // Public shipping settings (for checkout, guests, etc.)
+  getShippingPublic: async () => {
+    return apiRequest<{ settings: { shipping_enabled: boolean; shipping_flat_fee: number; shipping_free_threshold: number } }>(
+      '/settings/shipping-public'
+    );
+  },
+
+  // Admin shipping settings
+  getShippingAdmin: async () => {
+    return apiRequest<{ settings: { shipping_enabled: boolean; shipping_flat_fee: number; shipping_free_threshold: number } }>(
+      '/admin/settings/shipping'
+    );
+  },
+
+  updateShippingAdmin: async (settings: { shipping_enabled: boolean; shipping_flat_fee: number; shipping_free_threshold: number }) => {
+    return apiRequest<{ settings: any }>('/admin/settings/shipping', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  },
+};
+
 // Enquiries API
 export const enquiriesApi = {
   getAll: async (filters?: { status?: string; search?: string }) => {
